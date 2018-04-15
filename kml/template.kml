@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+	<name>WILDFILE</name>
+	<Style id="failed0">
+		<IconStyle>
+			<scale>3</scale>
+			<Icon>
+				<href>WILDFILE</href>
+			</Icon>
+			<hotSpot x="1" y="1" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+		<ListStyle>
+		</ListStyle>
+	</Style>
+	<StyleMap id="failed">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#failed0</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#failed1</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="failed1">
+		<IconStyle>
+			<scale>3</scale>
+			<Icon>
+				<href>WILDFILE</href>
+			</Icon>
+			<hotSpot x="1" y="1" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+		<ListStyle>
+		</ListStyle>
+	</Style>
+	<Placemark>
+		<styleUrl>#failed</styleUrl>
+		<gx:balloonVisibility>1</gx:balloonVisibility>
+		<Point>
+			<coordinates>CENTROID</coordinates>
+		</Point>
+	</Placemark>
+</Document>
+</kml>

@@ -37,7 +37,7 @@ echo -e "${PURPLE}Processing $2 at $timestamp";
 case "$2" in
 *.kmz)
 	echo -e "${PURPLE}Converting KMZ to SHP${YELLOW}";
-	unzip $1/$2 -d $TEMP_PATH/kmz;
+	unzip $1/$2 -d $TEMP_PATH/kml;
 	ogr2ogr $TEMP_PATH/shp/$WILDFILE.shp $TEMP_PATH/kml/doc.kml -overwrite -a_srs EPSG:4326;
 ;;
 *.tfw)
@@ -66,7 +66,7 @@ case "$2" in
 	echo -e "${GREEN}Stamping IR tif CRS${YELLOW}";
 	gdal_translate -a_srs EPSG:28350 $TEMP_PATH/raw/$WILDFILE.tif $TEMP_PATH/mga_50/${WILDFILE}_mga_50.tif -co COMPRESS=LZW -a_nodata 0 -outsize $MAPSIZE;
 	echo -e "${GREEN}Convert IR raster wgs84${YELLOW}";
-	gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 $TEMP_PATH/mga_50/${WILDFILE}_mga_50.tif $TEMP_PATH/wgs84/${WILDFILE}_wgs84.tif -co COMPRESS=LZW -overwrite -ts $MAPSIZE;
+	gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 $TEMP_PATH/mga_50/${WILDFILE}_mga_50.tif $TEMP_PATH/wgs84/${WILDFILE}_wgs84.tif -co COMPRESS=LZW -overwrite -ts 2000 1600 -ts $MAPSIZE;
 	echo -e "${GREEN}Scaling IR tif $TEMP_PATH/basemap/${WILDFILE}_wgs84_sc.tif ${YELLOW}";
 	gdal_translate -a_srs EPSG:4326 $TEMP_PATH/wgs84/${WILDFILE}_wgs84.tif $TEMP_PATH/basemap/${WILDFILE}_wgs84_sc.tif -b 1 -b 1 -b 1 -co COMPRESS=LZW -scale $PIXELRANGE 0 255 -stats -ot Byte -outsize $MAPSIZE;
  
@@ -126,7 +126,11 @@ case "$2" in
 	cp $FLIR2QR_PATH/output/${WILDFILE}.pdf /var/www/html/hotspotmaps/$WILDFILE.pdf;
  
   echo -e "${PURPLE}Creating KML${YELLOW}";
-  gdal2tiles.py -k -t $2 $FLIR2QR_PATH/output/${WILDFILE}_basemap_wgs84.tif /var/www/html/hotspotmaps/${WILDFILE}.kml;
+  gdal2tiles.py -k -t $2 $FLIR2QR_PATH/output/${WILDFILE}_basemap_wgs84.tif $TEMP_PATH/kmz/${WILDFILE}.kml;
+  cd $TEMP_PATH/kmz/${WILDFILE}.kml
+  mv $TEMP_PATH/kmz/${WILDFILE}.kml /var/www/html/hotspotmaps/${WILDFILE}.kml;
+  #zip ${WILDFILE}.zip doc.kml * -j -r;
+  #mv $TEMP_PATH/kmz/${WILDFILE}.kml/${WILDFILE}.zip /var/www/html/hotspotmaps/${WILDFILE}.kmz;
   
 	echo -e "${PURPLE}generating QR code for http://$IP/hotspotmaps/$WILDFILE.tif ${YELLOW}";
 	qrencode -o /var/www/html/hotspotmaps/qr/$WILDFILE.tif.png http://$IP/hotspotmaps/$WILDFILE.tif;
@@ -141,9 +145,12 @@ case "$2" in
   
   sed -i 's/WILDFILE/'"$WILDFILE"'_qr.png/g' "$FLIR2QR_PATH"'/output/'"$WILDFILE"'_qr.kml';
   sed -i 's/CENTROID/'"$centroid"'/g' "$FLIR2QR_PATH"'/output/'"$WILDFILE"'_qr.kml';
-  mv /var/www/html/hotspotmaps/$WILDFILE.kml/doc.kml /var/www/html/hotspotmaps/$WILDFILE.kml/${WILDFILE}_basemap.kml;
-  mv $FLIR2QR_PATH/output/${WILDFILE}_qr.kml /var/www/html/hotspotmaps/$WILDFILE.kml/${WILDFILE}_qr.kml;
-  mv $FLIR2QR_PATH/output/${WILDFILE}_qr.png /var/www/html/hotspotmaps/$WILDFILE.kml/${WILDFILE}_qr.png;
+  
+  cd $FLIR2QR_PATH/output 
+  zip ${WILDFILE}_qr.zip ${WILDFILE}_qr.kml ${WILDFILE}_qr.png -j;
+  mv $FLIR2QR_PATH/output/${WILDFILE}_qr.kml /var/www/html/hotspotmaps/${WILDFILE}_qr.kml;
+  mv $FLIR2QR_PATH/output/${WILDFILE}_qr.png /var/www/html/hotspotmaps/${WILDFILE}_qr.png;
+  mv $FLIR2QR_PATH/output/${WILDFILE}_qr.zip /var/www/html/hotspotmaps/${WILDFILE}_qr.kmz;
  ;;
 *.kml)
 	echo -e "${PURPLE}Converting hotspots KML to SHP ${YELLOW}";

@@ -1,15 +1,15 @@
 #!/bin/bash
 RED='\033[1;0;31m';
 WHITE='\033[1;37m';
+BLUE='\033[1;34m';
 FLIR2QR_PATH="$(dirname $1)";
 timestamp=$(date +%F_%T);
 if [ -e ${1}/${2} ];
-  then echo -e "${PURPLE}Uploaded file $1/$2 detected";
+  then echo -e "${BLUE}Uploaded file $1/$2 detected";
   else echo -e "${RED}$timestamp - $2 does not exist, exiting.${WHITE}"$'\r'; echo -e "$timestamp - $2 does not exist, exiting."$'\r' >> $FLIR2QR_PATH/log/error.log; exit 1; 
 fi
 GREEN='\033[0;32m';
 YELLOW='\033[1;33m';
-BLUE='\033[1;34m';
 CYAN='\033[0;36m';
 PURPLE='\033[1;35m';
 RED='\033[1;0;31m';
@@ -50,12 +50,15 @@ case "$2" in
 	while [[ ( -z $tfw ) && ( "$i" -lt "10" ) ]]
 		do
 		echo -e "${GREEN}Waiting for world file $WILDFILE.tfw";
-		tfw=$(ls $FLIR2QR_PATH/upload | grep $WILDFILE.tfw);
-		cp $1/$tfw $TEMP_PATH/raw/$tfw;
-		sleep 3;
+    if [ -z $tfw ];
+    	then tfw=$(ls $FLIR2QR_PATH/upload | grep $WILDFILE.tfw);	sleep 3;
+    	else echo -e "${BLUE}World file $WILDFILE.tfw detected!";
+    fi
 		let "i++";
 	done
-	if [[ ("$i" -eq "10") ]]; then echo -e "$timestamp - $2 timed out waiting for world file $tfw"$'\r' >> $FLIR2QR_PATH/log/error.log; exit 1; fi;
+	if [[ ("$i" -eq "10") ]]; then echo -e "${RED}$timestamp - $2 timed out waiting for world file $tfw ${WHITE}"$'\r'; echo -e "$timestamp - $2 timed out waiting for world file $tfw"$'\r' >> $FLIR2QR_PATH/log/error.log; exit 1;
+  fi
+  cp $1/$tfw $TEMP_PATH/raw/$tfw;
 	echo -e "${GREEN}World file $tfw detected"; 
 	echo -e "${PURPLE}Processing IR Rasters${YELLOW}";
 	echo -e "${GREEN}Copying IR tif${YELLOW}";
@@ -82,12 +85,16 @@ case "$2" in
 	i=0;
 	while [[ ( -z $hs ) && ( "$i" -lt "10" ) ]]
 	do
-		hs=$(ls $FLIR2QR_PATH/upload | grep kml);
-		cp $1/$hs $TEMP_PATH/kml/$hs;
-		let "i++";
-		sleep 3;
+		echo -e "${GREEN}Waiting for hotspot kml file";
+    if [ -z $hs ];
+    	then hs=$(ls $FLIR2QR_PATH/upload | grep kml); sleep 3;
+    	else echo -e "${BLUE}Hotspot $WILDFILE.kml detected!";
+    fi
+		let "i++";		
 	done
-	if [[ "$i" -eq "10" ]]; then echo "$timestamp - $2 Timed out waiting for KML"$'\r' >> $FLIR2QR_PATH/log/error.log; exit 1; fi;
+	if [[ "$i" -eq "10" ]]; then echo -e "${RED}$timestamp - $2 Timed out waiting for KML ${WHITE}"$'\r'; echo "$timestamp - $2 Timed out waiting for KML"$'\r' >> $FLIR2QR_PATH/log/error.log; exit 1; 
+  fi
+  cp $1/$hs $TEMP_PATH/kml/$hs;
 	echo -e "${GREEN}Converting hotspot KML to SHP ${YELLOW}";
 	ogr2ogr $TEMP_PATH/shp/${WILDFILE}_hs.shp $TEMP_PATH/kml/$hs -overwrite -a_srs EPSG:4326;
  
@@ -144,7 +151,7 @@ case "$2" in
 	ogr2ogr $TEMP_PATH/shp/$WILDFILE.shp $TEMP_PATH/kml/$2 -overwrite -a_srs EPSG:4326;
 ;;
 *)
-  echo -e "${RED}Unexpected file type '$2'. TIF/TFW or KML/KMZ only! ${YELLOW}";
+  echo -e "${RED}Unexpected file type '$2'. TIF/TFW or KML/KMZ only! ${WHITE}";
   echo "$timestamp - bad filetype uploaded - $2"$'\r' >> ${FLIR2QR_PATH}/log/error.log;
 ;;
 esac

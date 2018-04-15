@@ -66,7 +66,7 @@ case "$2" in
 	echo -e "${GREEN}Stamping IR tif CRS${YELLOW}";
 	gdal_translate -a_srs EPSG:28350 $TEMP_PATH/raw/$WILDFILE.tif $TEMP_PATH/mga_50/${WILDFILE}_mga_50.tif -co COMPRESS=LZW -a_nodata 0 -outsize $MAPSIZE;
 	echo -e "${GREEN}Convert IR raster wgs84${YELLOW}";
-	gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 $TEMP_PATH/mga_50/${WILDFILE}_mga_50.tif $TEMP_PATH/wgs84/${WILDFILE}_wgs84.tif -co COMPRESS=LZW -overwrite -ts 2000 1600 -ts $MAPSIZE;
+	gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 $TEMP_PATH/mga_50/${WILDFILE}_mga_50.tif $TEMP_PATH/wgs84/${WILDFILE}_wgs84.tif -co COMPRESS=LZW -overwrite -ts $MAPSIZE;
 	echo -e "${GREEN}Scaling IR tif $TEMP_PATH/basemap/${WILDFILE}_wgs84_sc.tif ${YELLOW}";
 	gdal_translate -a_srs EPSG:4326 $TEMP_PATH/wgs84/${WILDFILE}_wgs84.tif $TEMP_PATH/basemap/${WILDFILE}_wgs84_sc.tif -b 1 -b 1 -b 1 -co COMPRESS=LZW -scale $PIXELRANGE 0 255 -stats -ot Byte -outsize $MAPSIZE;
  

@@ -22,15 +22,15 @@ Tifs must have associated TFW or georeferencing will fail!
 
 #Usage - incrontab
 
-/flir2qr/upload IN_CLOSE_WRITE /bin/bash /flir2qr/sh/flir2qr_v04.sh $@ $#
+`/flir2qr/upload IN_CLOSE_WRITE /bin/bash /flir2qr/sh/flir2qr_v04.sh $@ $#`
 
 #Usage - terminal
 
-./flir2qr [path] [file]
+`./flir2qr [path] [file]`
 
-[path] is folder containing input data.
+`[path]` is folder containing input data.
 
-[file] is file to be processed.
+`[file]` is file to be processed.
 
 #Process
 
@@ -51,7 +51,7 @@ All rasters merged in following order (base to foreground)
     hotspots
     grid
 
-Output of merged rasters converted to KML + geoTIF + geoPDF and moved to /var/www/html/[output folder]
+Output of merged rasters converted to KML + geoTIF + geoPDF and moved to `/var/www/html/[output folder]`
 
 QR codes for hyperlink to each output file type generated
 

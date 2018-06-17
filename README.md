@@ -3,14 +3,28 @@ A bash script using GDAL and OGR to create a digital map for use in Avenza Maps,
 
 Designed to trigger via incron table entry when file upload detected, passing the incron [path] $@ and [file] $# as script parameters. Created for use in Ubuntu 16.04, though should run in any OS with bash / incron / GDAL.
 
-#Dependancies GDAL- http://www.gdal.org/index.html incron - http://inotify.aiken.cz/?section=incron&page=doc
+#Install GDAL- http://www.gdal.org/index.html
+`sudo apt update`
+`sudo apt install gdal-bin -y`
 
-#Allowable input file types
+#Install QRencode - https://fukuchi.org/works/qrencode/
+`sudo apt install qrencode -y`
 
-    KML / KMZ
-    TIF + TFW
+#Clone Flir2qr
+`git clone https://github.com/smk762/flir2qr`
 
-Tifs must have associated TFW or georeferencing will fail!
+#Install incron - http://inotify.aiken.cz/?section=incron&page=doc
+`sudo apt install incron -y`
+
+#Setup incron 
+edit allowed users - `nano /etc/incron.allow` 
+add user `root`
+edit incron table `sudo incrontab -e`
+Add line - `/flir2qr/upload IN_CLOSE_WRITE /bin/bash /flir2qr/sh/flir2qr_v07.sh $@ $#`
+(modify to full installation path)
+
+----------------------------------------------------------------------------------------------------------------------
+#notes below pending review - code modification to different file formats in progress
 
 #Required local vector datasets -Roads shapefile -Grid shapefile
 

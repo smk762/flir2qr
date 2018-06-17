@@ -11,6 +11,7 @@ Designed to trigger via incron table entry when file upload detected, passing th
 `sudo apt install qrencode -y`
 
 #Clone Flir2qr
+`cd /`
 `git clone https://github.com/smk762/flir2qr`
 
 #Install incron - http://inotify.aiken.cz/?section=incron&page=doc

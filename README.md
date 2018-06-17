@@ -18,9 +18,13 @@ Designed to trigger via incron table entry when file upload detected, passing th
 
 #Setup incron 
 edit allowed users - `nano /etc/incron.allow` 
+
 add user `root`
+
 edit incron table `sudo incrontab -e`
+
 Add line - `/flir2qr/upload IN_CLOSE_WRITE /bin/bash /flir2qr/sh/flir2qr_v07.sh $@ $#`
+
 (modify to full installation path)
 
 ----------------------------------------------------------------------------------------------------------------------

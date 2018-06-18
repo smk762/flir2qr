@@ -4,8 +4,11 @@ A bash script using GDAL and OGR to create a digital map for use in Avenza Maps,
 Designed to trigger via incron table entry when file upload detected, passing the incron [path] $@ and [file] $# as script parameters. Created for use in Ubuntu 16.04, though should run in any OS with bash / incron / GDAL.
 
 #Install GDAL- http://www.gdal.org/index.html
+`sudo add-apt-repository ppa:ubuntugis/ppa`
+`sudo apt-get update`
 `sudo apt update`
 `sudo apt install gdal-bin -y`
+`sudo apt install python-gdal -y`
 
 #Install QRencode - https://fukuchi.org/works/qrencode/
 `sudo apt install qrencode -y`

@@ -7,8 +7,6 @@ Designed to trigger via incron table entry when file upload detected, passing th
 
 `sudo add-apt-repository ppa:ubuntugis/ppa`
 
-`sudo apt-get update`
-
 `sudo apt update`
 
 `sudo apt install gdal-bin -y`

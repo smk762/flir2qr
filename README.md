@@ -26,7 +26,7 @@ Designed to trigger via incron table entry when file upload detected, passing th
 
 #Setup incron 
 
-edit allowed users - `nano /etc/incron.allow` 
+edit allowed users - `sudo nano /etc/incron.allow` 
 
 add user `root`
 

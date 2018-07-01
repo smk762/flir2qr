@@ -36,6 +36,11 @@ Add line - `/flir2qr/upload IN_CLOSE_WRITE /bin/bash /flir2qr/sh/flir2qr_v07.sh 
 
 (modify to full installation path)
 
+#Install p7zip
+
+sudo apt install p7zip-full
+
+
 ----------------------------------------------------------------------------------------------------------------------
 #notes below pending review - code modification to different file formats in progress
 

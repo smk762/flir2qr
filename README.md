@@ -37,7 +37,8 @@ add user `f2quser`
 
 edit incron table `incrontab -e`   (make sure you are logged in as f2quser)
 
-Add line - `/opt/flir2qr/upload IN_CLOSE_WRITE /bin/bash /opt/flir2qr/sh/flir2qr_v08 $@ $#`   (this will need to be changed, or symlinked, to the location where files are uploaded to)
+Add line - `/mnt/data/dmp IN_CLOSE_WRITE /bin/bash /opt/flir2qr/sh/flir2qr_v08 $@ $#`
+(this may need to be changed, or symlinked, to the location where files are uploaded to)
 
 
 

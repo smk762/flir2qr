@@ -13,11 +13,16 @@ Designed to trigger via incron table entry when file upload detected, passing th
 
 `sudo apt install python-gdal -y`
 
+#Install p7zip
+
+`sudo apt install p7zip-full`
+
 #Install QRencode - https://fukuchi.org/works/qrencode/
 `sudo apt install qrencode -y`
 
+
 #Clone Flir2qr
-`cd /`
+`cd /opt/`
 
 `git clone https://github.com/smk762/flir2qr`
 
@@ -28,17 +33,12 @@ Designed to trigger via incron table entry when file upload detected, passing th
 
 edit allowed users - `sudo nano /etc/incron.allow` 
 
-add user `root`
+add user `f2quser`
 
-edit incron table `sudo incrontab -e`
+edit incron table `incrontab -e`   (make sure you are logged in as f2quser)
 
-Add line - `/flir2qr/upload IN_CLOSE_WRITE /bin/bash /flir2qr/sh/flir2qr_v07.sh $@ $#`
+Add line - `/opt/flir2qr/upload IN_CLOSE_WRITE /bin/bash /opt/flir2qr/sh/flir2qr_v08 $@ $#`   (this will need to be changed, or symlinked, to the location where files are uploaded to)
 
-(modify to full installation path)
-
-#Install p7zip
-
-sudo apt install p7zip-full
 
 
 ----------------------------------------------------------------------------------------------------------------------

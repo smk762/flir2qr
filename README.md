@@ -5,7 +5,7 @@ Designed to trigger via incron table entry when file upload detected, passing th
 
 #Install GDAL- http://www.gdal.org/index.html
 
-`sudo add-apt-repository ppa:ubuntugis/ppa`
+`sudo add-apt-repository ppa:nextgis/ppa`  // GDAL 2.3
 
 `sudo apt update`
 

@@ -13,6 +13,11 @@ Designed to trigger via incron table entry when file upload detected, passing th
 
 `sudo apt install python-gdal -y`
 
+`cd ~`
+`curl hhttps://raw.githubusercontent.com/OSGeo/gdal/master/gdal/swig/python/scripts/gdal_edit.py > /usr/bin/gdal_edit.py`
+
+`sudo cp gdal_edit.py /usr/bin/gdal_edit.py`
+
 #Install p7zip
 
 `sudo apt install p7zip-full`

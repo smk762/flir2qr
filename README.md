@@ -3,38 +3,22 @@ A bash script using GDAL and OGR to create a digital map for use in Avenza Maps,
 
 Designed to trigger via incron table entry when file upload detected, passing the incron [path] $@ and [file] $# as script parameters. Created for use in Ubuntu 16.04, though should run in any OS with bash / incron / GDAL.
 
-#Install GDAL- http://www.gdal.org/index.html
-` sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable`
+#Install GDAL- http://www.gdal.org/index.html (one of the below)
+`sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable` // GDAL 2.2.2
 `sudo add-apt-repository ppa:nextgis/ppa`  // GDAL 2.3
 
 `sudo apt update`
-
-`sudo apt install gdal-bin python-gdal -y`
-
-
-`cd ~`
-`curl hhttps://raw.githubusercontent.com/OSGeo/gdal/master/gdal/swig/python/scripts/gdal_edit.py > /usr/bin/gdal_edit.py`
-
-`sudo cp gdal_edit.py /usr/bin/gdal_edit.py`
-
-#Install p7zip
-
-`sudo apt install p7zip-full`
-
-#Install QRencode - https://fukuchi.org/works/qrencode/
-`sudo apt install qrencode -y`
-
+`sudo apt install gdal-bin gdal-data libgdal-dev libgdal20 python-gdal -y`
 
 #Clone Flir2qr
 `cd /opt/`
-
 `git clone https://github.com/smk762/flir2qr`
 
-#Install incron - http://inotify.aiken.cz/?section=incron&page=doc
-`sudo apt install incron -y`
+
+#Install p7zip, QRencode - https://fukuchi.org/works/qrencode/, incron - http://inotify.aiken.cz/?section=incron&page=doc
+`sudo apt install p7zip-full qrencode incron -y`
 
 #Setup incron 
-
 edit allowed users - `sudo nano /etc/incron.allow` 
 
 add user `f2quser`
@@ -43,7 +27,6 @@ edit incron table `incrontab -e`   (make sure you are logged in as f2quser)
 
 Add line - `/mnt/data/dmp IN_CLOSE_WRITE /bin/bash /opt/flir2qr/sh/flir2qr_v08 $@ $#`
 (this may need to be changed, or symlinked, to the location where files are uploaded to)
-
 
 
 ----------------------------------------------------------------------------------------------------------------------

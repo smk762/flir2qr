@@ -3,18 +3,40 @@ A bash script using GDAL and OGR to create a digital map for use in Avenza Maps,
 
 Designed to trigger via incron table entry when file upload detected, passing the incron [path] $@ and [file] $# as script parameters. Created for use in Ubuntu 16.04, though should run in any OS with bash / incron / GDAL.
 
-#Install GDAL- http://www.gdal.org/index.html (one of the below)
+# AS SUPERUSER
+
+# Install GDAL- http://www.gdal.org/index.html (one of the below)
+
 `sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable` // GDAL 2.2.2
-`sudo add-apt-repository ppa:nextgis/ppa`  // GDAL 2.3
 
 `sudo apt update`
-`sudo apt install gdal-bin gdal-data libgdal-dev libgdal20 python-gdal -y`
 
-#Clone Flir2qr
+`sudo apt install gdal-bin gdal-data libgdal-dev libgdal20 python-gdal spatialite-bin -y`
+
+# Install zip, p7zip, QRencode - https://fukuchi.org/works/qrencode/, incron - http://inotify.aiken.cz/?section=incron&page=doc
+`sudo apt install p7zip-full qrencode incron -y`
+
+# Setup incron 
+edit allowed users - `sudo nano /etc/incron.allow` 
+
+add user `f2quser`
+
+# Get latest version of gdal_edit.py
+
+`cd ~`
+
+`curl https://raw.githubusercontent.com/OSGeo/gdal/master/gdal/swig/python/scripts/gdal_edit.py > /home/<user>/gdal_edit.py`
+
+`sudo mv gdal_edit.py /usr/bin/gdal_edit.py`
+
+`sudo chmod 775 /usr/bin/gdal_edit.py`
+
+# Clone Flir2qr
 `cd /opt/`
+
 `git clone https://github.com/smk762/flir2qr`
 
-# create user/group and set permissions 
+# Create user/group and set permissions 
 `sudo adduser f2quser`
 
 `sudo passwd f2quser`  // set a password
@@ -25,20 +47,12 @@ Designed to trigger via incron table entry when file upload detected, passing th
 
 `sudo chmod 775 /opt/flir2qr -R`
 
+ `su fq2user` // switch to fq2user
 
-
-#Install p7zip, QRencode - https://fukuchi.org/works/qrencode/, incron - http://inotify.aiken.cz/?section=incron&page=doc
-`sudo apt install p7zip-full qrencode incron -y`
-
-#Setup incron 
-edit allowed users - `sudo nano /etc/incron.allow` 
-
-add user `f2quser`
-
-edit incron table `incrontab -e`   (make sure you are logged in as f2quser)
+`incrontab -e`   // edit incron table for f2quser
 
 Add line - `/mnt/data/dmp IN_CLOSE_WRITE /bin/bash /opt/flir2qr/sh/flir2qr_v08 $@ $#`
-(this may need to be changed, or symlinked, to the location where files are uploaded to)
+
 
 
 ----------------------------------------------------------------------------------------------------------------------

@@ -47,7 +47,7 @@ add user `f2quser`
 
 `sudo chmod 775 /opt/flir2qr -R`
 
- `su fq2user` // switch to fq2user
+`su f2quser` // switch to fq2user
 
 `incrontab -e`   // edit incron table for f2quser
 

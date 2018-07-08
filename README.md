@@ -21,7 +21,7 @@ Designed to trigger via incron table entry when file upload detected, passing th
 
 `sudo addgroup f2qgroup`
 
-`sudo chown f2quser:f2qgrp /opt/flir2qr -R`
+`sudo chown f2quser:f2qgroup /opt/flir2qr -R`
 
 `sudo chmod 775 /opt/flir2qr -R`
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# TO TEST - /opt/flir2qr/sh/flir2qr_v08 /opt/flir2qr FireFlight_20180601_121018.7z
+# TO TEST - /opt/flir2qr/sh/flir2qr_v09 /opt/flir2qr FireFlight_20180601_121018.7z
 RED='\033[1;0;31m';
 WHITE='\033[1;37m';
 BLUE='\033[1;34m';

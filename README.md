@@ -45,7 +45,11 @@ add user `f2quser`
 
 `sudo chown f2quser:f2qgroup /opt/flir2qr -R`
 
+`sudo chown f2quser:f2qgroup /var/www/html/flir2qr -R`
+
 `sudo chmod 775 /opt/flir2qr -R`
+
+`sudo chmod 775 /var/www/html/flir2qr -R`
 
 `su f2quser` // switch to fq2user
 

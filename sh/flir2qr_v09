@@ -1,0 +1,144 @@
+#!/bin/bash
+# TO TEST - /opt/flir2qr/sh/flir2qr_v08 /opt/flir2qr FireFlight_20180601_121018.7z
+RED='\033[1;0;31m';
+WHITE='\033[1;37m';
+BLUE='\033[1;34m';
+GREEN='\033[0;32m';
+YELLOW='\033[1;33m';
+CYAN='\033[0;36m';
+PURPLE='\033[1;35m';
+RED='\033[1;0;31m';
+# FLIR2QR_PATH="$(dirname $1)";
+FLIR2QR_PATH="/opt/flir2qr";
+timestamp=$(date +%F_%T);
+IP="$(echo -e $(hostname -I) | tr -d '[:space:]')";
+ROADSFILE="$FLIR2QR_PATH/vectors/sample_roads_4m_buff.shp";
+GRIDFILE="$FLIR2QR_PATH/vectors/100m_grid_wgs84_1m_buff.shp";
+z7_FILENAME="${2%.*}";
+MAPSIZE="2000 1600";
+PIXELRANGE="0 8000";
+LOGO="$FLIR2QR_PATH/img/logo.gif";
+LEGEND="$FLIR2QR_PATH/img/legend.jpg";
+OUTPATH="/var/www/html/flir2qr/${z7_FILENAME}";
+echo 'to do: use prj files to derive EPSG';
+
+mkdir ${OUTPATH};
+mkdir ${OUTPATH}/log;
+mkdir ${OUTPATH}/qr;
+mkdir ${FLIR2QR_PATH}/output;
+mkdir ${FLIR2QR_PATH}/output/${z7_FILENAME};
+
+if [ -e ${1}/${2} ]
+  then echo -e "${BLUE}Uploaded zipfile $1/$2 detected";
+  else echo -e "${RED}$timestamp - $2 does not exist, exiting.${WHITE}"$'\r'; echo -e "$timestamp - $2 does not exist, exiting."$'\r' >> $FLIR2QR_PATH/log/error.log; exit 1; 
+fi;
+echo -e "${PURPLE}flir2qr path is $FLIR2QR_PATH";
+echo -e "Started processing $2 at $timestamp"$'\r' >> $FLIR2QR_PATH/log/flir2qr.log;
+if [ -e ${FLIR2QR_PATH}/temp.txt ]
+	then echo -e "${PURPLE}TempDir has already been spawned";
+	else echo -e "$RANDOM" > "$FLIR2QR_PATH/temp.txt";
+fi
+TEMPDIR=$(cat $FLIR2QR_PATH/temp.txt);
+TEMP_PATH=$FLIR2QR_PATH/temp/$TEMPDIR;
+echo -e "${PURPLE}Creating temporary folders in $TEMP_PATH";
+declare -a PROCDIRS=('raw' 'mga_50' 'wgs84' 'clipfence' 'hotspot' 'basemap' 'roads' 'kmz' 'kml' 'shp' 'grid');
+for dir in "${PROCDIRS[@]}"; do  mkdir -p $TEMP_PATH/$dir; done
+echo -e "${PURPLE}IP address is ${IP}";
+echo -e "${PURPLE}Processing $2 at $timestamp";
+
+echo -e "Checking for 7z archive";
+case "$2" in
+*.7z)
+	echo -e "Extracting archive";
+	7z x $1/$2 -o$TEMP_PATH
+	echo -e "${GREEN}Copying PNGs${YELLOW}";
+	cp $TEMP_PATH/$z7_FILENAME/HotSpots/*  $TEMP_PATH/hotspot
+	cp $TEMP_PATH/$z7_FILENAME/PNGs/*  $TEMP_PATH/raw
+	echo -e "CHECKING FOR REQUIRED FILES";
+	for filename in $TEMP_PATH/raw/*.png; do
+		fname=$(basename "$filename")
+		echo -e "${PURPLE}Processing $filename ${YELLOW}";
+		WILDFILE="${fname%.*}";
+		mkdir ${OUTPATH}/OVERLAY_${WILDFILE};
+
+		echo -e "${GREEN}Stamping HS png CRS${YELLOW}";
+			gdal_translate -a_srs EPSG:28350 $TEMP_PATH/hotspot/${WILDFILE}.png $TEMP_PATH/mga_50/HSa_${WILDFILE}_z50.tif -co COMPRESS=LZW -b 1 -a_nodata 0 -outsize $MAPSIZE -of GTiff;
+		echo -e "${GREEN}Coloring HS raster wgs84${YELLOW}";
+			gdaldem color-relief $TEMP_PATH/mga_50/HSa_${WILDFILE}_z50.tif ${FLIR2QR_PATH}/color_table.txt $TEMP_PATH/mga_50/HS_${WILDFILE}_z50.tif -alpha -exact_color_entry;
+		echo -e "${GREEN}Convert HS raster wgs84${YELLOW}";
+			gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 $TEMP_PATH/mga_50/HS_${WILDFILE}_z50.tif $TEMP_PATH/basemap/HS_${WILDFILE}.tif -co COMPRESS=LZW -overwrite -ts 2000 1600 -ts $MAPSIZE -ot Byte;
+
+		echo -e "${GREEN}Stamping IR png CRS${YELLOW}";
+			gdal_translate -a_srs EPSG:28350 $TEMP_PATH/raw/${WILDFILE}.png $TEMP_PATH/mga_50/IR_${WILDFILE}_z50.tif -co COMPRESS=LZW -b 1 -b 1 -b 1 -b mask -a_nodata 0 -outsize $MAPSIZE -of GTiff;
+			gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha $TEMP_PATH/mga_50/IR_${WILDFILE}_z50.tif;
+		echo -e "${GREEN}Convert HS raster wgs84${YELLOW}";
+			gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 $TEMP_PATH/mga_50/IR_${WILDFILE}_z50.tif $TEMP_PATH/basemap/IRa_${WILDFILE}_wgs84.tif -co COMPRESS=LZW -overwrite -ts 2000 1600 -ts $MAPSIZE -ot Byte;
+		echo -e "${GREEN}Scaling IR tif $TEMP_PATH/basemap/${WILDFILE}_wgs84_scaled.tif ${YELLOW}";
+			gdal_translate -a_srs EPSG:4326 $TEMP_PATH/basemap/IRa_${WILDFILE}_wgs84.tif $TEMP_PATH/basemap/IR_${WILDFILE}.tif -scale 0 255 -co COMPRESS=LZW -a_nodata 0 -outsize $MAPSIZE -of GTiff -ot Byte;
+		
+		echo -e "${PURPLE}Creating clip fence${YELLOW}";
+			echo -e "${GREEN}Reducing IR raster colours to make clip fence${YELLOW}";
+				gdal_merge.py -co NBITS=1 -o $TEMP_PATH/clipfence/extent_${WILDFILE}.tif $TEMP_PATH/basemap/IR_${WILDFILE}.tif;
+			echo -e "${GREEN}Polygonising IR clip fence $TEMP_PATH/clipfence/extent_${WILDFILE}.tif ${YELLOW}";
+				gdal_polygonize.py $TEMP_PATH/clipfence/extent_${WILDFILE}.tif $TEMP_PATH/clipfence/extent_${WILDFILE}.shp clip;
+		  	echo -e "${GREEN}Dissolving IR clip fence $TEMP_PATH/clipfence/fence_${WILDFILE}_wgs84.shp${YELLOW}";
+				ogr2ogr $TEMP_PATH/clipfence/fence_${WILDFILE}.shp $TEMP_PATH/clipfence/extent_${WILDFILE}.shp -dialect sqlite -sql "SELECT ST_Union(geometryProperty) FROM 'clip'";
+			echo -e "${GREEN}Stamping IR clip fence $TEMP_PATH/clipfence/extent_${WILDFILE}_wgs84.shp ${YELLOW}";
+				ogr2ogr $TEMP_PATH/clipfence/fence_${WILDFILE}_wgs84.shp $TEMP_PATH/clipfence/fence_${WILDFILE}.shp -overwrite -a_srs EPSG:4326;
+
+	  	echo -e "${PURPLE}Clipping vectors to IR fence${YELLOW}";
+		  	echo -e "${GREEN}Clipping grid ${YELLOW}";
+			  	ogr2ogr -clipsrc $TEMP_PATH/clipfence/fence_${WILDFILE}_wgs84.shp -clipsrclayer fence_${WILDFILE}_wgs84 $TEMP_PATH/grid/grid_${WILDFILE}.shp $GRIDFILE -a_srs EPSG:4326 -progress; 
+			echo -e "${GREEN}Clipping roads ${YELLOW}";
+				ogr2ogr -clipsrc $TEMP_PATH/clipfence/fence_${WILDFILE}_wgs84.shp -clipsrclayer fence_${WILDFILE}_wgs84 $TEMP_PATH/roads/roads_${WILDFILE}.shp $ROADSFILE -a_srs EPSG:4326 -progress;
+
+		echo -e "${PURPLE}Burning vectors to raster"; 
+		  	echo -e "${GREEN}Burning grid $TEMP_PATH/grid/grid_${WILDFILE}.tif ${YELLOW} ${YELLOW}";
+				gdal_rasterize -burn 10 -burn 250 -burn 250 -burn 255 -ts $MAPSIZE $TEMP_PATH/grid/grid_${WILDFILE}.shp $TEMP_PATH/basemap/grid_${WILDFILE}.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
+				gdal_edit.py -colorinterp_4 alpha $TEMP_PATH/basemap/grid_${WILDFILE}.tif;
+				
+	  		echo -e "${GREEN}Burning roads $TEMP_PATH/roads/roads_${WILDFILE}.tif${YELLOW}";
+				gdal_rasterize -burn 39 -burn 50 -burn 216 -burn 255 -ts $MAPSIZE $TEMP_PATH/roads/roads_${WILDFILE}.shp $TEMP_PATH/basemap/roads_${WILDFILE}.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
+				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha $TEMP_PATH/basemap/roads_${WILDFILE}.tif;				
+				
+			echo -e "${PURPLE}Merging rasters into final map $FLIR2QR_PATH/output/${z7_FILENAME}/${WILDFILE}.tif ${YELLOW}";			
+				gdal_merge.py -o $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}.tif $TEMP_PATH/basemap/IR_${WILDFILE}.tif $TEMP_PATH/basemap/roads_${WILDFILE}.tif $TEMP_PATH/basemap/HS_${WILDFILE}.tif $TEMP_PATH/basemap/grid_${WILDFILE}.tif;
+		#  -co COMPRESS=LZW -co INTERLEAVE=BAND -co PHOTOMETRIC=RGB -v -a_nodata 5 -ot -init 7 -a_nodata 3 Byte;
+
+		# Moving output into ww folders
+		echo -e "${PURPLE}Adding $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}.tif to $OUTPATH/ ${YELLOW}"; 
+		cp -f $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}.tif $OUTPATH/merged_${WILDFILE}.tif;
+		echo -e "${PURPLE}Creating GeoPDF${YELLOW}"; 
+	  	gdal_translate $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}.tif $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}.pdf -of PDF -a_srs EPSG:4326 -co EXTRA_IMAGES=$LOGO,5,0,1,$LEGEND,5,85,1 -outsize $MAPSIZE;
+		cp -f $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}.pdf $OUTPATH/merged_${WILDFILE}.pdf;
+	  	echo -e "${PURPLE}Creating KML${YELLOW}";
+	  	gdal2tiles.py -k -t $2 $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}.tif $TEMP_PATH/kmz/merged_${WILDFILE}.kml;
+	  	cd $TEMP_PATH/kmz/merged_${WILDFILE}.kml;
+	  	mv -f $TEMP_PATH/kmz/merged_${WILDFILE}.kml/ $OUTPATH/OVERLAY_${WILDFILE};
+		echo -e "${PURPLE}generating QR code for http://$IP/flir2qr/${WILDFILE}.tif ${YELLOW}";
+		qrencode -o $OUTPATH/qr/merged_${WILDFILE}_tif.png http://$IP/flir2qr/${z7_FILENAME}/merged_${WILDFILE}.tif;
+	  	qrencode -o $OUTPATH/qr/merged_${WILDFILE}_pdf.png http://$IP/flir2qr/${z7_FILENAME}/merged_${WILDFILE}.pdf;
+	  	qrencode -o $OUTPATH/qr/merged_${WILDFILE}_kml.png http://$IP/flir2qr/${z7_FILENAME}/merged_${WILDFILE}.kml;
+	  	cp -f $OUTPATH/qr/merged_${WILDFILE}_pdf.png $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}_qr.png;
+	  	cp -f $FLIR2QR_PATH/kml/template.kml $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}_qr.kml;
+	  	centroid=$(echo $(gdalinfo $TEMP_PATH/clipfence/extent_${WILDFILE}.tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	echo -e "${PURPLE}Creating $WILDFILE centroid placemark at $centroid ${YELLOW}";
+	  													   $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}_qr.kml
+	  	sed -i 's/WILDFILE/'"merged_$WILDFILE"'_qr.tif/g' "$FLIR2QR_PATH"'/output/'"${z7_FILENAME}"'/merged_'"$WILDFILE"'_qr.kml';
+	  	sed -i 's/CENTROID/'"$centroid"'/g' "$FLIR2QR_PATH"'/output/'"${z7_FILENAME}"'/merged_'"$WILDFILE"'_qr.kml';
+	  	cd  $FLIR2QR_PATH/output/${z7_FILENAME}
+	  	zip ${WILDFILE}_qr.zip merged_${WILDFILE}_qr.kml merged_${WILDFILE}_qr.png -j;
+	  	mv -f $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}_qr.kml $OUTPATH/merged_${WILDFILE}_qr.kml;
+	  	mv -f $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}_qr.png $OUTPATH/merged_${WILDFILE}_qr.png;
+		mv -f $FLIR2QR_PATH/output/${z7_FILENAME}/${WILDFILE}_qr.zip $OUTPATH/${WILDFILE}_qr.kmz;
+		echo -e "Processing $2 complete"'\r' >> $FLIR2QR_PATH/log/flir2qr.log;
+		echo -e "${BLUE}Processing $2 complete! ${WHITE}";
+		done
+	 ;;
+	*)
+	  echo -e "${RED}Unexpected file type '$2'. 7z Archive Only! ${WHITE}";
+	  echo "$timestamp - bad filetype uploaded - $2"$'\r' >> ${FLIR2QR_PATH}/log/error.log;
+	;;
+esac
+rm -Rf /opt/flir2qr/temp/*;
+cp -f $FLIR2QR_PATH/log/* $OUTPATH/log;

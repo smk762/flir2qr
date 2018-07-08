@@ -14,6 +14,14 @@ Designed to trigger via incron table entry when file upload detected, passing th
 `cd /opt/`
 `git clone https://github.com/smk762/flir2qr`
 
+# create user/group and set permissions 
+`sudo adduser f2quser`
+`sudo passwd f2quser`  // set a password
+`sudo addgroup f2qgroup`
+`sudo chown f2quser:f2qgrp /opt/flir2qr -R`
+`sudo chmod 775 /opt/flir2qr -R`
+
+
 
 #Install p7zip, QRencode - https://fukuchi.org/works/qrencode/, incron - http://inotify.aiken.cz/?section=incron&page=doc
 `sudo apt install p7zip-full qrencode incron -y`

@@ -3,9 +3,9 @@ A bash script using GDAL and OGR to create a digital map for use in Avenza Maps,
 
 Designed to trigger via incron table entry when file upload detected, passing the incron [path] $@ and [file] $# as script parameters. Created for use in Ubuntu 16.04, though should run in any OS with bash / incron / GDAL.
 
-# AS SUPERUSER
+## AS SUPERUSER
 
-# Install GDAL- http://www.gdal.org/index.html (one of the below)
+## Install GDAL- http://www.gdal.org/index.html (one of the below)
 
 `sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable` // GDAL 2.2.2
 
@@ -13,15 +13,15 @@ Designed to trigger via incron table entry when file upload detected, passing th
 
 `sudo apt install gdal-bin gdal-data libgdal-dev libgdal20 python-gdal spatialite-bin -y`
 
-# Install zip, p7zip, QRencode - https://fukuchi.org/works/qrencode/, incron - http://inotify.aiken.cz/?section=incron&page=doc
+## Install zip, p7zip, QRencode - https://fukuchi.org/works/qrencode/, incron - http://inotify.aiken.cz/?section=incron&page=doc
 `sudo apt install p7zip-full qrencode incron -y`
 
-# Setup incron 
+## Setup incron 
 edit allowed users - `sudo nano /etc/incron.allow` 
 
 add user `f2quser`
 
-# Get latest version of gdal_edit.py
+## Get latest version of gdal_edit.py
 
 `cd ~`
 
@@ -31,12 +31,12 @@ add user `f2quser`
 
 `sudo chmod 775 /usr/bin/gdal_edit.py`
 
-# Clone Flir2qr
+## Clone Flir2qr
 `cd /opt/`
 
 `git clone https://github.com/smk762/flir2qr`
 
-# Create user/group and set permissions 
+## Create user/group and set permissions 
 `sudo adduser f2quser`
 
 `sudo passwd f2quser`  // set a password

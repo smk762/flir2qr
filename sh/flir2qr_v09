@@ -124,7 +124,7 @@ case "$2" in
 	  	centroid=$(echo $(gdalinfo $TEMP_PATH/clipfence/extent_${WILDFILE}.tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
 	  	echo -e "${PURPLE}Creating $WILDFILE centroid placemark at $centroid ${YELLOW}";
 	  													   $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}_qr.kml
-	  	sed -i 's/WILDFILE/'"merged_$WILDFILE"'_qr.tif/g' "$FLIR2QR_PATH"'/output/'"${z7_FILENAME}"'/merged_'"$WILDFILE"'_qr.kml';
+	  	sed -i 's/WILDFILE/'"merged_$WILDFILE"'_qr.png/g' "$FLIR2QR_PATH"'/output/'"${z7_FILENAME}"'/merged_'"$WILDFILE"'_qr.kml';
 	  	sed -i 's/CENTROID/'"$centroid"'/g' "$FLIR2QR_PATH"'/output/'"${z7_FILENAME}"'/merged_'"$WILDFILE"'_qr.kml';
 	  	cd  $FLIR2QR_PATH/output/${z7_FILENAME}
 	  	zip ${WILDFILE}_qr.zip merged_${WILDFILE}_qr.kml merged_${WILDFILE}_qr.png -j;

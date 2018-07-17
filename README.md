@@ -5,7 +5,7 @@ Designed to trigger via incron table entry when file upload detected, passing th
 
 ## AS SUPERUSER
 
-## Install GDAL- http://www.gdal.org/index.html (one of the below)
+## Install GDAL- http://www.gdal.org/index.html (Use the repo below)
 
 `sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable` // GDAL 2.2.2
 

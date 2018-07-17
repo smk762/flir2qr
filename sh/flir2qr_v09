@@ -114,7 +114,12 @@ case "$2" in
 	  	echo -e "${PURPLE}Creating KML${YELLOW}";
 	  	gdal2tiles.py -k -t $2 $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}.tif $TEMP_PATH/kmz/merged_${WILDFILE}.kml;
 	  	cd $TEMP_PATH/kmz/merged_${WILDFILE}.kml;
-	  	mv -f $TEMP_PATH/kmz/merged_${WILDFILE}.kml/ $OUTPATH/OVERLAY_${WILDFILE};
+
+	  	zip $OUTPATH/${WILDFILE}_overlay.zip $TEMP_PATH/kmz/merged_${WILDFILE}.kml -r;
+		mv -f ${WILDFILE}_overlay.zip $OUTPATH/${WILDFILE}_overlay.kmz;
+	  	mv -f $TEMP_PATH/kmz/merged_${WILDFILE}.kml/* $OUTPATH/OVERLAY_${WILDFILE};
+
+
 		echo -e "${PURPLE}generating QR code for http://$IP/flir2qr/${WILDFILE}.tif ${YELLOW}";
 		qrencode -o $OUTPATH/qr/merged_${WILDFILE}_tif.png http://$IP/flir2qr/${z7_FILENAME}/merged_${WILDFILE}.tif;
 	  	qrencode -o $OUTPATH/qr/merged_${WILDFILE}_pdf.png http://$IP/flir2qr/${z7_FILENAME}/merged_${WILDFILE}.pdf;
@@ -123,11 +128,11 @@ case "$2" in
 	  	cp -f $FLIR2QR_PATH/kml/template.kml $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}_qr.kml;
 	  	centroid=$(echo $(gdalinfo $TEMP_PATH/clipfence/extent_${WILDFILE}.tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
 	  	echo -e "${PURPLE}Creating $WILDFILE centroid placemark at $centroid ${YELLOW}";
-	  													   $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}_qr.kml
 	  	sed -i 's/WILDFILE/'"merged_$WILDFILE"'_qr.tif/g' "$FLIR2QR_PATH"'/output/'"${z7_FILENAME}"'/merged_'"$WILDFILE"'_qr.kml';
 	  	sed -i 's/CENTROID/'"$centroid"'/g' "$FLIR2QR_PATH"'/output/'"${z7_FILENAME}"'/merged_'"$WILDFILE"'_qr.kml';
 	  	cd  $FLIR2QR_PATH/output/${z7_FILENAME}
 	  	zip ${WILDFILE}_qr.zip merged_${WILDFILE}_qr.kml merged_${WILDFILE}_qr.png -j;
+	  	echo -e "${BLUE}moving files $2 complete! ${WHITE}";
 	  	mv -f $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}_qr.kml $OUTPATH/merged_${WILDFILE}_qr.kml;
 	  	mv -f $FLIR2QR_PATH/output/${z7_FILENAME}/merged_${WILDFILE}_qr.png $OUTPATH/merged_${WILDFILE}_qr.png;
 		mv -f $FLIR2QR_PATH/output/${z7_FILENAME}/${WILDFILE}_qr.zip $OUTPATH/${WILDFILE}_qr.kmz;

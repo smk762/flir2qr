@@ -1,5 +1,8 @@
 #!/bin/bash
+
 # TO TEST - /opt/flir2qr/sh/flir2qr_v09 /opt/flir2qr FireFlight_20180601_121018.7z
+# See readme for details on how to setup permissions as required
+
 RED='\033[1;0;31m';
 WHITE='\033[1;37m';
 BLUE='\033[1;34m';
@@ -21,6 +24,7 @@ LOGO="$FLIR2QR_PATH/img/logo.gif";
 LEGEND="$FLIR2QR_PATH/img/legend.jpg";
 OUTPATH="/var/www/html/flir2qr/${z7_FILENAME}";
 echo 'to do: use prj files to derive EPSG';
+
 
 mkdir ${OUTPATH};
 mkdir ${OUTPATH}/log;

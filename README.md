@@ -5,7 +5,7 @@ Designed to trigger via incron table entry when file upload detected, passing th
 
 ## AS SUPERUSER
 
-## Install GDAL- http://www.gdal.org/index.html (one of the below)
+## Install GDAL- http://www.gdal.org/index.html (Use the repo below)
 
 `sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable` // GDAL 2.2.2
 
@@ -34,7 +34,7 @@ add user `f2quser`
 ## Clone Flir2qr
 `cd /opt/`
 
-`git clone https://github.com/smk762/flir2qr`
+`sudo git clone https://github.com/smk762/flir2qr`
 
 ## Create user/group and set permissions 
 `sudo adduser f2quser`
@@ -55,7 +55,7 @@ add user `f2quser`
 
 `incrontab -e`   // edit incron table for f2quser
 
-Add line - `/mnt/data/dmp IN_CLOSE_WRITE /bin/bash /opt/flir2qr/sh/flir2qr_v08 $@ $#`
+Add line - `/mnt/data/dmp IN_CLOSE_WRITE /bin/bash /opt/flir2qr/sh/flir2qr_v09 $@ $#`
 
 
 

@@ -137,14 +137,14 @@ case "$2" in
 		  	echo -e "${PURPLE}Creating KML${YELLOW}";
 		  	gdal2tiles.py -k -t $2 ${OUTPATH}/tif/${WILDFILE}_merged.tif ${TEMP_PATH}/kmz/${WILDFILE}_merged.kml;
 		  	cd ${TEMP_PATH}/kmz/${WILDFILE}_merged.kml;
-		  	zip ${WWWPATH}/overlay/${WILDFILE}_overlay.zip . -r;
-			mv -f ${WWWPATH}/overlay/${WILDFILE}_overlay.zip ${WWWPATH}/kmz/${WILDFILE}_overlay.kmz;
+		  	zip ${OUTPATH}/overlay/${WILDFILE}_overlay.zip . -r;
+			mv -f ${OUTPATH}/overlay/${WILDFILE}_overlay.zip ${WWWPATH}/kmz/${WILDFILE}_overlay.kmz;
 
 			echo -e "${PURPLE}generating QR code for http://$IP/flir2qr/${WILDFILE}.tif ${YELLOW}";
-			qrencode -o ${WWWPATH}/qr/${WILDFILE}_merged_tif.png http://$IP/flir2qr/${z7_FILENAME}/tif/${WILDFILE}_merged.tif;
-		  	qrencode -o ${WWWPATH}/qr/${WILDFILE}_merged_pdf.png http://$IP/flir2qr/${z7_FILENAME}/pdf/${WILDFILE}_merged.pdf;
+			qrencode -o ${OUTPATH}/qr/${WILDFILE}_merged_tif.png http://$IP/flir2qr/${z7_FILENAME}/tif/${WILDFILE}_merged.tif;
+		  	qrencode -o ${OUTPATH}/qr/${WILDFILE}_merged_pdf.png http://$IP/flir2qr/${z7_FILENAME}/pdf/${WILDFILE}_merged.pdf;
 
-		  	cp -f ${WWWPATH}/qr/* ${OUTPATH}/qr;
+		  	cp -f ${OUTPATH}/qr/* ${WWWPATH}/qr;
 		  	cp -f $FLIR2QR_PATH/kml/template.kml ${OUTPATH}/kml/${WILDFILE}_qr.kml;
 
 		  	centroid=$(echo $(gdalinfo ${TEMP_PATH}/clipfence/${WILDFILE}_extent.tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
@@ -162,6 +162,9 @@ case "$2" in
 		echo -e "${GREEN}Output data available at http://${IP}/flir2qr/${z7_FILENAME} ${WHITE}";
 
 		rm -Rf /opt/flir2qr/temp/*;
+		rm -Rf /opt/flir2qr/temp/*;
+		rm -Rf ${WWWPATH}/kml;
+		rm -Rf ${WWWPATH}/overlay;
 		cp -f $FLIR2QR_PATH/log/* ${WWWPATH}/log;
 	 ;;
 	*)

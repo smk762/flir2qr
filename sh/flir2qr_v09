@@ -139,6 +139,7 @@ case "$2" in
 		  	cd ${TEMP_PATH}/kmz/${WILDFILE}_merged.kml;
 		  	zip ${OUTPATH}/overlay/${WILDFILE}_overlay.zip . -r;
 			mv -f ${OUTPATH}/overlay/${WILDFILE}_overlay.zip ${WWWPATH}/kmz/${WILDFILE}_overlay.kmz;
+			rm -Rf ${TEMP_PATH}/kmz/${WILDFILE}_merged.kml;
 
 			echo -e "${PURPLE}generating QR code for http://$IP/flir2qr/${WILDFILE}.tif ${YELLOW}";
 			qrencode -o ${OUTPATH}/qr/${WILDFILE}_merged_tif.png http://$IP/flir2qr/${z7_FILENAME}/tif/${WILDFILE}_merged.tif;

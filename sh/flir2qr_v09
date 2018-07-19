@@ -151,7 +151,7 @@ case "$2" in
 		  	centroid=$(echo $(gdalinfo ${TEMP_PATH}/clipfence/${WILDFILE}_extent.tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
 		  	echo -e "${PURPLE}Creating $WILDFILE centroid placemark at $centroid ${YELLOW}";
 
-		  	sed -i 's/WILDFILE/'"$WILDFILE"'_merged_tif.png/g' "${OUTPATH}"'/kml/'"${WILDFILE}"'_qr.kml';
+		  	sed -i 's/WILDFILE/'"$WILDFILE"'_merged_pdf.png/g' "${OUTPATH}"'/kml/'"${WILDFILE}"'_qr.kml';
 		  	sed -i 's/CENTROID/'"$centroid"'/g' "${OUTPATH}"'/kml/'"${WILDFILE}"'_qr.kml';
 		  	cd  ${OUTPATH}
 		  	zip ${WILDFILE}_qr.zip ${OUTPATH}/kml/${WILDFILE}_qr.kml ${WWWPATH}/qr/${WILDFILE}_merged_pdf.png -j;

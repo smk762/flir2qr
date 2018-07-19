@@ -57,7 +57,9 @@ add user `f2quser`
 
 Add line - `/mnt/data/dmp IN_CLOSE_WRITE /bin/bash /opt/flir2qr/sh/flir2qr_v09 $@ $#`
 
+### Issues
 
+32-bit Linux distros may falsely report insufficient free diskspace. You can workaround the issue by disabling the check for free space by adding `--config CHECK_DISK_FREE_SPACE NO` to your command line
 
 ----------------------------------------------------------------------------------------------------------------------
 #notes below pending review - code modification to different file formats in progress

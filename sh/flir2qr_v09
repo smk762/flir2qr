@@ -139,7 +139,6 @@ case "$2" in
 		  	cd ${TEMP_PATH}/kmz/${WILDFILE}_merged.kml;
 		  	zip ${WWWPATH}/overlay/${WILDFILE}_overlay.zip . -r;
 			mv -f ${WWWPATH}/overlay/${WILDFILE}_overlay.zip ${WWWPATH}/kmz/${WILDFILE}_overlay.kmz;
-		  	#mv -f ${TEMP_PATH}/kmz/${WILDFILE}_merged.kml/* ${WWWPATH}/OVERLAY_${WILDFILE};
 
 			echo -e "${PURPLE}generating QR code for http://$IP/flir2qr/${WILDFILE}.tif ${YELLOW}";
 			qrencode -o ${WWWPATH}/qr/${WILDFILE}_merged_tif.png http://$IP/flir2qr/${z7_FILENAME}/tif/${WILDFILE}_merged.tif;
@@ -155,10 +154,8 @@ case "$2" in
 		  	sed -i 's/CENTROID/'"$centroid"'/g' "${OUTPATH}"'/kml/'"${WILDFILE}"'_qr.kml';
 		  	cd  ${OUTPATH}
 		  	zip ${WILDFILE}_qr.zip ${OUTPATH}/kml/${WILDFILE}_qr.kml ${WWWPATH}/qr/${WILDFILE}_merged_pdf.png -j;
-		  	echo -e "${BLUE}moving files $2 complete! ${WHITE}";
-		  	mv -f ${OUTPATH}/kml/${WILDFILE}_qr.kml ${WWWPATH}/${WILDFILE}_qr.kml;
-		  	mv -f ${WWWPATH}/qr/${WILDFILE}_merged_tif.png ${WWWPATH}/qr/${WILDFILE}_qr.png;
 			mv -f ${WILDFILE}_qr.zip ${WWWPATH}/kmz/${WILDFILE}_qr.kmz;
+		  	echo -e "${BLUE}moving files $2 complete! ${WHITE}";
 		done
 		echo -e "Processing $2 complete"'\r' >> $FLIR2QR_PATH/log/flir2qr.log;
 		echo -e "${BLUE}Processing $2 complete! ${WHITE}";

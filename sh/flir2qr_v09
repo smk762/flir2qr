@@ -102,9 +102,7 @@ case "$2" in
 		echo -e "${GREEN}Scaling IR tif ${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif ${YELLOW}";
 			gdal_translate -a_srs EPSG:4326 ${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif ${TEMP_PATH}/basemap/${WILDFILE}_ir.tif -scale 0 255 -co COMPRESS=LZW -a_nodata 0 -outsize $MAPSIZE -of GTiff -ot Byte;
 			
-		rm -Rf ${TEMP_PATH}/raw/*;
-		rm -Rf ${TEMP_PATH}/hotspot/*;
-		rm -Rf ${TEMP_PATH}/mga_50/*;
+		
 		
 		# create clip fence
 		echo -e "${PURPLE}Creating clip fence${YELLOW}";
@@ -137,23 +135,24 @@ case "$2" in
 			echo -e "${PURPLE}Merging rasters into final map ${OUTPATH}/${WILDFILE}.tif ${YELLOW}";			
 				gdal_merge.py -o ${OUTPATH}/tif/${WILDFILE}_merged.tif ${TEMP_PATH}/basemap/${WILDFILE}_ir.tif ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif -v;
 
-			rm -rF ${TEMP_PATH}/basemap/*;
+			
 		
 			# Moving output into www folders
 			echo -e "${PURPLE}Adding ${OUTPATH}/tif/${WILDFILE}_merged.tif to ${WWWPATH}/ ${YELLOW}"; 
 			cp -f ${OUTPATH}/tif/${WILDFILE}_merged.tif ${WWWPATH}/tif/${WILDFILE}_merged.tif;
+			
+			
 			echo -e "${PURPLE}Creating GeoPDF${YELLOW}"; 
 		  	gdal_translate ${OUTPATH}/tif/${WILDFILE}_merged.tif ${OUTPATH}/pdf/${WILDFILE}_merged.pdf -of PDF -a_srs EPSG:4326 -co EXTRA_IMAGES=$LOGO,5,0,1,$LEGEND,5,85,1 -outsize $MAPSIZE;
 			cp -f ${OUTPATH}/pdf/${WILDFILE}_merged.pdf ${WWWPATH}/pdf/${WILDFILE}_merged.pdf;
-		  	echo -e "${PURPLE}Creating KML${YELLOW}";
+			
+		  	echo -e "${PURPLE}Creating KMZ ${YELLOW}";
 		  	gdal2tiles.py -k -t $2 ${OUTPATH}/tif/${WILDFILE}_merged.tif ${TEMP_PATH}/kmz/${WILDFILE}_merged.kml;
 		  	cd ${TEMP_PATH}/kmz/${WILDFILE}_merged.kml;
 		  	zip ${TEMP_PATH}/overlay/${WILDFILE}_overlay.zip . -r;
 			mv -f ${TEMP_PATH}/overlay/${WILDFILE}_overlay.zip ${OUTPATH}/kmz/${WILDFILE}_overlay.kmz;
 			cp -f ${OUTPATH}/kmz/${WILDFILE}_overlay.kmz ${WWWPATH}/kmz/${WILDFILE}_overlay.kmz;
 			
-			rm -Rf ${TEMP_PATH}/kmz/*;
-			rm -Rf ${TEMP_PATH}/overlay/*;
 
 			echo -e "${PURPLE}generating QR code for http://$IP/flir2qr/${WILDFILE}.tif ${YELLOW}";
 			qrencode -o ${OUTPATH}/qr/${WILDFILE}_merged_tif.png http://$IP/flir2qr/${z7_FILENAME}/tif/${WILDFILE}_merged.tif;
@@ -165,7 +164,6 @@ case "$2" in
 		  	centroid=$(echo $(gdalinfo ${TEMP_PATH}/clipfence/${WILDFILE}_extent.tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
 		  	echo -e "${PURPLE}Creating $WILDFILE centroid placemark at $centroid ${YELLOW}";
 
-			rm -Rf ${TEMP_PATH}/clipfence/*;
 
 		  	sed -i 's/WILDFILE/'"$WILDFILE"'_merged_pdf.png/g' "${OUTPATH}"'/kml/'"${WILDFILE}"'_qr.kml';
 		  	sed -i 's/CENTROID/'"$centroid"'/g' "${OUTPATH}"'/kml/'"${WILDFILE}"'_qr.kml';
@@ -173,13 +171,20 @@ case "$2" in
 		  	zip ${WILDFILE}_qr.zip ${OUTPATH}/kml/${WILDFILE}_qr.kml ${WWWPATH}/qr/${WILDFILE}_merged_pdf.png -j;
 			mv -f ${WILDFILE}_qr.zip ${WWWPATH}/kmz/${WILDFILE}_qr.kmz;
 		  	echo -e "${BLUE}moving files $2 complete! ${WHITE}";
+			
+			# clear temp data to create space 
+			rm -Rf ${TEMP_PATH}/raw/*;
+			rm -Rf ${TEMP_PATH}/hotspot/*;
+			rm -Rf ${TEMP_PATH}/mga_50/*;
+			rm -Rf ${TEMP_PATH}/clipfence/*;
+			rm -Rf ${TEMP_PATH}/basemap/*;
+			rm -Rf ${TEMP_PATH}/kmz/*;
+			rm -Rf ${TEMP_PATH}/overlay/*;
 		done
 		echo -e "Processing $2 complete"'\r' >> $FLIR2QR_PATH/log/flir2qr.log;
 		echo -e "${BLUE}Processing $2 complete! ${WHITE}";
 		echo -e "${GREEN}Output data available at http://${IP}/flir2qr/${z7_FILENAME} ${WHITE}";
-
-		rm -Rf /opt/flir2qr/temp/*;
-		rm -Rf /opt/flir2qr/temp/*;
+		
 		rm -Rf ${WWWPATH}/kml;
 		rm -Rf ${WWWPATH}/overlay;
 		cp -f $FLIR2QR_PATH/log/* ${WWWPATH}/log;

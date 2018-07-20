@@ -11,12 +11,14 @@ PURPLE='\033[1;35m';
 RED='\033[1;0;31m';
 timestamp=$(date +%F_%T);
 IP="$(echo -e $(hostname -I) | tr -d '[:space:]')";
-MAPSIZE="2000 1600";
+MAPSIZE="1500 1200";
 PIXELRANGE="0 8000";
 
 # TODOs
 echo 'to do: use pwg files to derive EPSG';
 echo 'reduce vector variable to folder';
+echo 'debug filesize issues';
+echo 'create PDF before TIF';
 
 # Set install and output paths
 z7_FILENAME="${2%.*}";
@@ -36,12 +38,12 @@ LEGEND="$FLIR2QR_PATH/img/legend.jpg";
 
 # Create output folders for archiving and public transmission
 rm -Rf ${WWWPATH};
-rm -Rf ${FLIR2QR_PATH}/output/${z7_FILENAME}
+rm -Rf ${FLIR2QR_PATH}/output/${z7_FILENAME};
 
 mkdir ${WWWPATH};
 mkdir ${FLIR2QR_PATH}/output/${z7_FILENAME};
 	# create temp subfolders
-	declare -a OUTDIRS=('tif' 'qr' 'pdf' 'tif' 'kmz' 'log' 'kml' 'overlay');
+	declare -a OUTDIRS=('tif' 'qr' 'pdf' 'tif' 'kmz' 'log' 'kml' '\');
 	for dir in "${OUTDIRS[@]}"; do  mkdir -p ${FLIR2QR_PATH}/output/${z7_FILENAME}/$dir; done
 	for dir in "${OUTDIRS[@]}"; do  mkdir -p ${WWWPATH}/$dir; done
 
@@ -72,8 +74,10 @@ case "$2" in
 	echo -e "Extracting archive";
 	7z x $1/$2 -o${TEMP_PATH}
 	echo -e "${GREEN}Copying PNGs${YELLOW}";
-	cp ${TEMP_PATH}/$z7_FILENAME/HotSpots/*  ${TEMP_PATH}/hotspot
-	cp ${TEMP_PATH}/$z7_FILENAME/PNGs/*  ${TEMP_PATH}/raw
+	mv ${TEMP_PATH}/$z7_FILENAME/HotSpots/*  ${TEMP_PATH}/hotspot;
+	mv ${TEMP_PATH}/$z7_FILENAME/PNGs/*  ${TEMP_PATH}/raw;
+	rm -rF ${TEMP_PATH}/$z7_FILENAME;
+	
 
 	# process all pngs
 	for filename in ${TEMP_PATH}/raw/*.png; do
@@ -81,23 +85,26 @@ case "$2" in
 		WILDFILE=${fname%.*};
 		echo -e "${PURPLE}Processing $fname ${YELLOW}";
 		
-
 		# prepare hotspots
 		echo -e "${GREEN} Set Hotspot coords to MGA zone 50 ${YELLOW}";
 			gdal_translate -a_srs EPSG:28350 ${TEMP_PATH}/hotspot/${WILDFILE}.png ${TEMP_PATH}/mga_50/${WILDFILE}_hs.tif -co COMPRESS=LZW -b 1 -a_nodata 0 -outsize $MAPSIZE -of GTiff;
 		echo -e "${GREEN} Coloring HS raster wgs84$ {YELLOW}";
 			gdaldem color-relief ${TEMP_PATH}/mga_50/${WILDFILE}_hs.tif ${FLIR2QR_PATH}/color_table.txt ${TEMP_PATH}/mga_50/${WILDFILE}_hs_z50.tif -alpha -exact_color_entry;
 		echo -e "${GREEN} Deproject hotspot to wgs84 ${YELLOW}";
-			gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 ${TEMP_PATH}/mga_50/${WILDFILE}_hs_z50.tif ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif -co COMPRESS=LZW -overwrite -ts 2000 1600 -ts $MAPSIZE -ot Byte;
+			gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 ${TEMP_PATH}/mga_50/${WILDFILE}_hs_z50.tif ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif -co COMPRESS=LZW -overwrite -ts $MAPSIZE -ot Byte;
 
 		# prepare ir imagery
 		echo -e "${GREEN}Stamping IR png CRS${YELLOW}";
 			gdal_translate -a_srs EPSG:28350 ${TEMP_PATH}/raw/${WILDFILE}.png ${TEMP_PATH}/mga_50/${WILDFILE}_ir_z50.tif -co COMPRESS=LZW -b 1 -b 1 -b 1 -b mask -a_nodata 0 -outsize $MAPSIZE -of GTiff;
 			gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/mga_50/${WILDFILE}_ir_z50.tif;
 		echo -e "${GREEN}Convert HS raster wgs84${YELLOW}";
-			gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 ${TEMP_PATH}/mga_50/${WILDFILE}_ir_z50.tif ${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif -co COMPRESS=LZW -overwrite -ts 2000 1600 -ts $MAPSIZE -ot Byte;
-		echo -e "${GREEN}Scaling IR tif ${TEMP_PATH}/basemap/${WILDFILE}_wgs84_scaled.tif ${YELLOW}";
+			gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 ${TEMP_PATH}/mga_50/${WILDFILE}_ir_z50.tif ${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif -co COMPRESS=LZW -overwrite -ts $MAPSIZE -ot Byte;
+		echo -e "${GREEN}Scaling IR tif ${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif ${YELLOW}";
 			gdal_translate -a_srs EPSG:4326 ${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif ${TEMP_PATH}/basemap/${WILDFILE}_ir.tif -scale 0 255 -co COMPRESS=LZW -a_nodata 0 -outsize $MAPSIZE -of GTiff -ot Byte;
+			
+		rm -rF ${TEMP_PATH}/raw/*;
+		rm -rF ${TEMP_PATH}/hotspot/*;
+		rm -rF ${TEMP_PATH}/mga_50/*;
 		
 		# create clip fence
 		echo -e "${PURPLE}Creating clip fence${YELLOW}";
@@ -117,6 +124,8 @@ case "$2" in
 			echo -e "${GREEN}Clipping roads ${YELLOW}";
 				ogr2ogr -clipsrc ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -clipsrclayer ${WILDFILE}_fence_wgs84 ${TEMP_PATH}/roads/${WILDFILE}_roads.shp $ROADSFILE -a_srs EPSG:4326 -progress;
 
+		
+		
 		#convert clipped vectors to rasters
 		echo -e "${PURPLE}Burning vectors to raster"; 
 		  	echo -e "${GREEN}Burning grid ${TEMP_PATH}/grid/${WILDFILE}_grid.tif ${YELLOW} ${YELLOW}";
@@ -126,8 +135,10 @@ case "$2" in
 				gdal_rasterize -burn 39 -burn 50 -burn 216 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/roads/${WILDFILE}_roads.shp ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
 				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif;								
 			echo -e "${PURPLE}Merging rasters into final map ${OUTPATH}/${WILDFILE}.tif ${YELLOW}";			
-				gdal_merge.py -o ${OUTPATH}/tif/${WILDFILE}_merged.tif ${TEMP_PATH}/basemap/${WILDFILE}_ir.tif ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif;
+				gdal_merge.py -o ${OUTPATH}/tif/${WILDFILE}_merged.tif ${TEMP_PATH}/basemap/${WILDFILE}_ir.tif ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif -v;
 
+			rm -rF ${TEMP_PATH}/basemap/*;
+		
 			# Moving output into www folders
 			echo -e "${PURPLE}Adding ${OUTPATH}/tif/${WILDFILE}_merged.tif to ${WWWPATH}/ ${YELLOW}"; 
 			cp -f ${OUTPATH}/tif/${WILDFILE}_merged.tif ${WWWPATH}/tif/${WILDFILE}_merged.tif;
@@ -150,6 +161,8 @@ case "$2" in
 
 		  	centroid=$(echo $(gdalinfo ${TEMP_PATH}/clipfence/${WILDFILE}_extent.tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
 		  	echo -e "${PURPLE}Creating $WILDFILE centroid placemark at $centroid ${YELLOW}";
+
+			rm -rF ${TEMP_PATH}/clipfence/*;
 
 		  	sed -i 's/WILDFILE/'"$WILDFILE"'_merged_pdf.png/g' "${OUTPATH}"'/kml/'"${WILDFILE}"'_qr.kml';
 		  	sed -i 's/CENTROID/'"$centroid"'/g' "${OUTPATH}"'/kml/'"${WILDFILE}"'_qr.kml';

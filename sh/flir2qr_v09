@@ -76,7 +76,7 @@ case "$2" in
 	echo -e "${GREEN}Copying PNGs${YELLOW}";
 	mv ${TEMP_PATH}/$z7_FILENAME/HotSpots/*  ${TEMP_PATH}/hotspot;
 	mv ${TEMP_PATH}/$z7_FILENAME/PNGs/*  ${TEMP_PATH}/raw;
-	rm -rF ${TEMP_PATH}/$z7_FILENAME;
+	rm -Rf ${TEMP_PATH}/$z7_FILENAME;
 	
 
 	# process all pngs

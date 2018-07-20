@@ -102,9 +102,9 @@ case "$2" in
 		echo -e "${GREEN}Scaling IR tif ${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif ${YELLOW}";
 			gdal_translate -a_srs EPSG:4326 ${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif ${TEMP_PATH}/basemap/${WILDFILE}_ir.tif -scale 0 255 -co COMPRESS=LZW -a_nodata 0 -outsize $MAPSIZE -of GTiff -ot Byte;
 			
-		rm -rF ${TEMP_PATH}/raw/*;
-		rm -rF ${TEMP_PATH}/hotspot/*;
-		rm -rF ${TEMP_PATH}/mga_50/*;
+		rm -Rf ${TEMP_PATH}/raw/*;
+		rm -Rf ${TEMP_PATH}/hotspot/*;
+		rm -Rf ${TEMP_PATH}/mga_50/*;
 		
 		# create clip fence
 		echo -e "${PURPLE}Creating clip fence${YELLOW}";

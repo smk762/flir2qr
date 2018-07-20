@@ -173,8 +173,8 @@ case "$2" in
 		  	echo -e "${BLUE}moving files $2 complete! ${WHITE}";
 			
 			# clear temp data to create space 
-			rm -Rf ${TEMP_PATH}/raw/*;
-			rm -Rf ${TEMP_PATH}/hotspot/*;
+			rm -Rf ${TEMP_PATH}/raw/${WILDFILE}.png;
+			rm -Rf ${TEMP_PATH}/hotspot/${WILDFILE}.png;
 			rm -Rf ${TEMP_PATH}/mga_50/*;
 			rm -Rf ${TEMP_PATH}/clipfence/*;
 			rm -Rf ${TEMP_PATH}/basemap/*;

@@ -150,8 +150,8 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 		echo -e "${PURPLE}Burning vectors to raster"; 
 	  		echo -e "${GREEN}Burning roads ${TEMP_PATH}/roads/${WILDFILE}_roads.tif${YELLOW}";
 				gdal_rasterize -burn 24 -burn 150 -burn 2 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/roads/${WILDFILE}_roads.shp ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
-				 cp ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif ${WWWPATH}
-				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif;
+				 cp ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif ${WWWPATH}
+				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif;
 				gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif
 				# gdal_translate -a_ullr $ulx $uly $lrx $lry ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif
 				echo "---------------------------------------------------"

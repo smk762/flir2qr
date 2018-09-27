@@ -238,7 +238,7 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 		cp -f $FLIR2QR_PATH/log/* ${WWWPATH}/log;
 		
 		endTime=$SECONDS;
-		/home/$USER/emailnotifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWWPATH}/pdf/${WILDFILE}_overview.pdf" "http://kens-therm-001/flir2qr/${z7_FILENAME}"
+		/home/$USER/emailnotifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWWPATH}/tif/overview.tif" "http://kens-therm-001/flir2qr/${z7_FILENAME}"
 	 
 			runTime=$(echo $procTime/60-$startTime/60|bc)
 			echo "Script completed in $runTime minutes"

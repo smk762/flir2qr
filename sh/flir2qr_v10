@@ -229,6 +229,9 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 		echo -e "Creating PDF overview"'\r' >> $FLIR2QR_PATH/log/flir2qr.log;
 		gdal_merge.py -o ${WWWPATH}/pdf/overview.pdf $(ls ${WWWPATH}/tif/*.tif)  -v -co COMPRESS=DEFLATE -co tiled=yes;
 		
+		echo -e "Creating TIF overview"'\r' >> $FLIR2QR_PATH/log/flir2qr.log;
+		gdal_merge.py -o ${WWWPATH}/tif/overview.tif $(ls ${WWWPATH}/tif/*.tif)  -v -co COMPRESS=DEFLATE -co tiled=yes;
+		
 		echo -e "${PURPLE}Creating KMZ Overlay ${YELLOW}";
 		  	gdal2tiles.py -k -t $2 ${WWWPATH}/pdf/overview.pdf ${TEMP_PATH}/kmz/overview.kml;
 		  	cd ${TEMP_PATH}/kmz/overview.kml;

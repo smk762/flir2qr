@@ -129,7 +129,24 @@ case "$2" in
 		NE_label="${TEMP_PATH}/label/${WILDFILE}_NE.png";
 		SW_label="${TEMP_PATH}/label/${WILDFILE}_SW.png";
 		SE_label="${TEMP_PATH}/label/${WILDFILE}_SE.png";
+		# cp ${TEMP_PATH}/label/${WILDFILE}* ${WWWPATH};
+
+		# clip vector data
+	  	echo -e "${PURPLE}Clipping vectors to IR fence${YELLOW}";
+		  	echo -e "${GREEN}Clipping grid ${YELLOW}";
+			  	ogr2ogr -clipsrc ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -clipsrclayer ${WILDFILE}_fence_wgs84 ${TEMP_PATH}/grid/${WILDFILE}_grid.shp $GRIDFILE -a_srs EPSG:4326 -progress; 
+		  	echo -e "${GREEN}Burning grid ${TEMP_PATH}/grid/${WILDFILE}_grid.tif ${YELLOW} ${YELLOW}";
+				gdal_rasterize -burn 10 -burn 250 -burn 250 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/grid/${WILDFILE}_grid.shp ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
+				gdal_edit.py -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif;
+				
+				
 		echo "----------------------------------------------------------------------------";
+		# Get Centroid and Bounding Box Corners
+	  	NW=$(echo $(gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif | grep 'Upper Left' |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	NE=$(echo $(gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif | grep 'Upper Right' |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	SW=$(echo $(gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif | grep 'Lower Left' |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	SE=$(echo $(gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif | grep 'Lower Right' |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	
 		ul=($(echo $NW|sed 's/,//'))
 		ulx=$(echo ${ul[0]})
 		uly=$(echo ${ul[1]})
@@ -138,12 +155,7 @@ case "$2" in
 		lry=$(echo ${lr[1]})
 		echo "----------------------------------------------------------------------------";
 
-		# cp ${TEMP_PATH}/label/${WILDFILE}* ${WWWPATH};
-
-		# clip vector data
-	  	echo -e "${PURPLE}Clipping vectors to IR fence${YELLOW}";
-		  	echo -e "${GREEN}Clipping grid ${YELLOW}";
-			  	ogr2ogr -clipsrc ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -clipsrclayer ${WILDFILE}_fence_wgs84 ${TEMP_PATH}/grid/${WILDFILE}_grid.shp $GRIDFILE -a_srs EPSG:4326 -progress; 
+				
 			echo -e "${GREEN}Clipping roads ${YELLOW}";
 				ogr2ogr -clipsrc ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -clipsrclayer ${WILDFILE}_fence_wgs84 ${TEMP_PATH}/roads/${WILDFILE}_roads.shp $ROADSFILE -a_srs EPSG:4326 -progress;
 				 
@@ -152,9 +164,6 @@ case "$2" in
 		
 		#convert clipped vectors to rasters
 		echo -e "${PURPLE}Burning vectors to raster"; 
-		  	echo -e "${GREEN}Burning grid ${TEMP_PATH}/grid/${WILDFILE}_grid.tif ${YELLOW} ${YELLOW}";
-				gdal_rasterize -burn 10 -burn 250 -burn 250 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/grid/${WILDFILE}_grid.shp ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
-				gdal_edit.py -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif;
 	  		echo -e "${GREEN}Burning roads ${TEMP_PATH}/roads/${WILDFILE}_roads.tif${YELLOW}";
 				gdal_rasterize -burn 244 -burn 150 -burn 2 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/roads/${WILDFILE}_roads.shp ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
 				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif;

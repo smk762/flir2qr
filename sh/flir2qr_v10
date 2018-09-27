@@ -232,7 +232,7 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 			
 			procTime=$SECONDS;
 			runTime=$(echo $procTime/60-$startTime/60|bc)
-			echo "Script completed in $runTime minutes"
+			echo "Script runtime is $runTime seconds"
 		done
 		echo -e "Processing $2 complete"'\r' >> $FLIR2QR_PATH/log/flir2qr.log;
 		echo -e "${BLUE}Processing $2 complete! ${WHITE}";

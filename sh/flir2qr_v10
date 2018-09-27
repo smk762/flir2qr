@@ -134,8 +134,8 @@ case "$2" in
 		ulx=$(echo ${ul[0]})
 		uly=$(echo ${ul[1]})
 		lr=($(echo $SE|sed 's/,//'))
-		lrx=$(echo ${ll[0]})
-		lry=$(echo ${ll[1]})
+		lrx=$(echo ${lr[0]})
+		lry=$(echo ${lr[1]})
 		echo "----------------------------------------------------------------------------";
 
 		# cp ${TEMP_PATH}/label/${WILDFILE}* ${WWWPATH};
@@ -156,10 +156,10 @@ case "$2" in
 				gdal_rasterize -burn 10 -burn 250 -burn 250 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/grid/${WILDFILE}_grid.shp ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
 				gdal_edit.py -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif;
 	  		echo -e "${GREEN}Burning roads ${TEMP_PATH}/roads/${WILDFILE}_roads.tif${YELLOW}";
-				gdal_rasterize -burn 244 -burn 150 -burn 2 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/roads/${WILDFILE}_roads.shp ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
-				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif;
-				gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif
-				#gdal_translate -a_ullr $ulx $uly $lrx $lry -a_srs '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs' ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif
+				gdal_rasterize -burn 244 -burn 150 -burn 2 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/roads/${WILDFILE}_roads.shp ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
+				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif;
+				gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif
+				gdal_translate -a_ullr $ulx $uly $lrx $lry ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif
 				echo "---------------------------------------------------"
 				gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif
 				

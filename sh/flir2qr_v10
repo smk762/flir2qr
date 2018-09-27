@@ -36,8 +36,6 @@ GRIDFILE="$FLIR2QR_PATH/vectors/100m_grid_wgs84_1m_buff.shp";
 LOGO="$FLIR2QR_PATH/img/logo.gif";
 LEGEND="$FLIR2QR_PATH/img/legend.jpg";
 
-
-
 # Create output folders for archiving and public transmission
 rm -Rf ${WWWPATH};
 rm -Rf ${FLIR2QR_PATH}/output/${z7_FILENAME};
@@ -151,7 +149,7 @@ case "$2" in
 		  	echo -e "${GREEN}Burning grid ${TEMP_PATH}/grid/${WILDFILE}_grid.tif ${YELLOW} ${YELLOW}";
 				gdal_rasterize -burn 10 -burn 250 -burn 250 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/grid/${WILDFILE}_grid.shp ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
 				gdal_edit.py -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif;
-	  		echo -e "${GREEN}Burning roads ${TEMP_PATH}/roads/${WILDFILE}_roads.tif${YELLOW}";
+	  		#echo -e "${GREEN}Burning roads ${TEMP_PATH}/roads/${WILDFILE}_roads.tif${YELLOW}";
 				#gdal_rasterize -burn 39 -burn 50 -burn 216 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/roads/${WILDFILE}_roads.shp ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
 				#gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif;
 
@@ -228,6 +226,7 @@ case "$2" in
 	  	#cd ${WWWPATH}/log/${WILDFILE}_combined.kml;
 	  	#zip ${WWWPATH}/log/${WILDFILE}_combined.zip . -r;
 		#mv -f ${WWWPATH}/log/${WILDFILE}_combined.zip ${WWWPATH}/kmz/${z7_FILENAME}_combined.kmz;
+		/home/$USER/email.notifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWWPATH}/pdf/${WILDFILE}_overview.pdf"
 	 ;;
 	*)
 	  echo -e "${RED}Unexpected file type '$2'. 7z Archive Only! ${WHITE}";

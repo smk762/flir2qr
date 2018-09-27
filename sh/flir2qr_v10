@@ -133,7 +133,7 @@ case "$2" in
 		SW_label="${TEMP_PATH}/label/${WILDFILE}_SW.png";
 		SE_label="${TEMP_PATH}/label/${WILDFILE}_SE.png";
 
-		cp ${TEMP_PATH}/label/${WILDFILE}* ${WWWPATH};
+		# cp ${TEMP_PATH}/label/${WILDFILE}* ${WWWPATH};
 
 		# clip vector data
 	  	echo -e "${PURPLE}Clipping vectors to IR fence${YELLOW}";
@@ -218,10 +218,10 @@ case "$2" in
 		cp -f $FLIR2QR_PATH/log/* ${WWWPATH}/log;
 		gdalbuildvrt ${WWWPATH}/log/${WILDFILE}_combined.vrt ${OUTPATH}/tif/*.tif;
 	  	echo -e "${PURPLE}Creating KMZ ${YELLOW}";
-	  	gdal2tiles.py -k -t ${WWWPATH}/log/${WILDFILE}_combined.vrt ${WWWPATH}/log/${WILDFILE}_combined.kml;
-	  	cd ${WWWPATH}/log/${WILDFILE}_combined.kml;
-	  	zip ${WWWPATH}/log/${WILDFILE}_combined.zip . -r;
-		mv -f ${WWWPATH}/log/${WILDFILE}_combined.zip ${WWWPATH}/kmz/${z7_FILENAME}_combined.kmz;
+	  	#gdal2tiles.py -k -t ${WWWPATH}/log/${WILDFILE}_combined.vrt ${WWWPATH}/log/${WILDFILE}_combined.kml;
+	  	#cd ${WWWPATH}/log/${WILDFILE}_combined.kml;
+	  	#zip ${WWWPATH}/log/${WILDFILE}_combined.zip . -r;
+		#mv -f ${WWWPATH}/log/${WILDFILE}_combined.zip ${WWWPATH}/kmz/${z7_FILENAME}_combined.kmz;
 	 ;;
 	*)
 	  echo -e "${RED}Unexpected file type '$2'. 7z Archive Only! ${WHITE}";

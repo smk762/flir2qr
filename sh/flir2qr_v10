@@ -55,6 +55,7 @@ fi;
 echo -e "Checking for 7z archive";
 case "$2" in
 *.7z)
+	procTime=$SECONDS;
 	# Create random temp folders for processing
 	if [ -e ${FLIR2QR_PATH}/temp.txt ]
 		then echo -e "${PURPLE}TempDir has already been spawned";
@@ -191,7 +192,7 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 			mv -f ${TEMP_PATH}/overlay/${WILDFILE}_overlay.zip ${OUTPATH}/kmz/${WILDFILE}_overlay.kmz;
 			cp -f ${OUTPATH}/kmz/${WILDFILE}_overlay.kmz ${WWWPATH}/kmz/${WILDFILE}_overlay.kmz;			
 
-			echo -e "${PURPLE}generating QR code for http://$IP/flir2qr/${WILDFILE}.tif ${YELLOW}";
+			echo -e "${PURPLE}generating QR code for ${WILDFILE}.tif ${YELLOW}";
 			qrencode -o ${OUTPATH}/qr/${WILDFILE}_merged_tif.png http://$IP/flir2qr/${z7_FILENAME}/tif/${WILDFILE}_merged.tif;
 		  	qrencode -o ${OUTPATH}/qr/${WILDFILE}_merged_pdf.png http://$IP/flir2qr/${z7_FILENAME}/pdf/${WILDFILE}_merged.pdf;
 		  	cp -f ${OUTPATH}/qr/* ${WWWPATH}/qr;
@@ -218,14 +219,14 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 			rm -Rf ${TEMP_PATH}/overlay/*;
 			rm -Rf ${TEMP_PATH}/label/*;
 			
-			procTime=$SECONDS;
-			runTime=$(echo $procTime/60-$startTime/60|bc)
+			
+			runTime=$(echo $procTime-$startTime|bc)
 			echo "Script runtime is $runTime seconds"
 		done
 		
 		# Merging output for overview
 		echo -e "Creating PDF overview"'\r' >> $FLIR2QR_PATH/log/flir2qr.log;
-		gdal_merge.py -o ${WWWPATH}/tif/${7z_FILENAME}_overview.tif $(ls ${WWWPATH}/tif/*.tif) 
+		gdal_merge.py -o ${WWWPATH}/tif/overview.tif $(ls ${WWWPATH}/tif/*.tif) 
 		
 		echo -e "Processing $2 complete"'\r' >> $FLIR2QR_PATH/log/flir2qr.log;
 		echo -e "${BLUE}Processing $2 complete! ${WHITE}";
@@ -234,16 +235,11 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 		rm -Rf ${WWWPATH}/kml;
 		rm -Rf ${WWWPATH}/overlay;
 		cp -f $FLIR2QR_PATH/log/* ${WWWPATH}/log;
-			
-	  	#echo -e "${PURPLE}Creating KMZ ${YELLOW}";
-	  	#gdal2tiles.py -k -t ${WWWPATH}/log/${WILDFILE}_combined.vrt ${WWWPATH}/log/${WILDFILE}_combined.kml;
-	  	#cd ${WWWPATH}/log/${WILDFILE}_combined.kml;
-	  	#zip ${WWWPATH}/log/${WILDFILE}_combined.zip . -r;
-		#mv -f ${WWWPATH}/log/${WILDFILE}_combined.zip ${WWWPATH}/kmz/${z7_FILENAME}_combined.kmz;
 		
 		endTime=$SECONDS;
 		runTime=$(echo $endTime/60-$startTime/60|bc)
-		echo "Script completed in $runTime minutes"
+		procTime=$(echo $SECONDS-$procTime|bc)
+		echo "Tile processed in $procTime seconds. Script runtime is $runTime minutes"
 		/home/$USER/emailnotifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWWPATH}/pdf/${WILDFILE}_overview.pdf" "http://kens-therm-001/flir2qr/${z7_FILENAME}"
 	 ;;
 	*)

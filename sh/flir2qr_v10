@@ -29,7 +29,7 @@ OUTPATH="${FLIR2QR_PATH}/output/${z7_FILENAME}";
 
 # Define vector layers
 #ROADSFILE="$FLIR2QR_PATH/vectors/sample_roads_4m_buff.shp";
-ROADSFILE="$FLIR2QR_PATH/vectors/rds_test.tif";
+ROADSFILE="$FLIR2QR_PATH/vectors/rds_wgs84_5m_buff.shp";
 GRIDFILE="$FLIR2QR_PATH/vectors/100m_grid_wgs84_1m_buff.shp";
 
 # Define legend and logo images (inactive at the moment)
@@ -139,9 +139,9 @@ case "$2" in
 		  	echo -e "${GREEN}Clipping grid ${YELLOW}";
 			  	ogr2ogr -clipsrc ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -clipsrclayer ${WILDFILE}_fence_wgs84 ${TEMP_PATH}/grid/${WILDFILE}_grid.shp $GRIDFILE -a_srs EPSG:4326 -progress; 
 			echo -e "${GREEN}Clipping roads ${YELLOW}";
-				# ogr2ogr -clipsrc ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -clipsrclayer ${WILDFILE}_fence_wgs84 ${TEMP_PATH}/roads/${WILDFILE}_roads.shp $ROADSFILE -a_srs EPSG:4326 -progress;
-				gdalwarp -cutline ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -crop_to_cutline $ROADSFILE ${TEMP_PATH}/roads/${WILDFILE}_roads_temp.tif -co COMPRESS=LZW -dstnodata 0 -ot Byte -s_srs EPSG:4326 -t_srs EPSG:4326 -ts $MAPSIZE;		
-				gdal_translate -expand rgb ${TEMP_PATH}/roads/${WILDFILE}_roads_temp.tif ${TEMP_PATH}/roads/${WILDFILE}_roads.tif
+				ogr2ogr -clipsrc ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -clipsrclayer ${WILDFILE}_fence_wgs84 ${TEMP_PATH}/roads/${WILDFILE}_roads.shp $ROADSFILE -a_srs EPSG:4326 -progress;
+				#gdalwarp -cutline ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -crop_to_cutline $ROADSFILE ${TEMP_PATH}/roads/${WILDFILE}_roads_temp.tif -co COMPRESS=LZW -dstnodata 0 -ot Byte -s_srs EPSG:4326 -t_srs EPSG:4326 -ts $MAPSIZE;		
+				#gdal_translate -expand rgb ${TEMP_PATH}/roads/${WILDFILE}_roads_temp.tif ${TEMP_PATH}/roads/${WILDFILE}_roads.tif
 		
 		#convert clipped vectors to rasters
 		echo -e "${PURPLE}Burning vectors to raster"; 
@@ -149,15 +149,15 @@ case "$2" in
 				gdal_rasterize -burn 10 -burn 250 -burn 250 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/grid/${WILDFILE}_grid.shp ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
 				gdal_edit.py -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif;
 	  		#echo -e "${GREEN}Burning roads ${TEMP_PATH}/roads/${WILDFILE}_roads.tif${YELLOW}";
-				#gdal_rasterize -burn 39 -burn 50 -burn 216 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/roads/${WILDFILE}_roads.shp ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
-				#gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif;
+				gdal_rasterize -burn 244 -burn 150 -burn 2 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/roads/${WILDFILE}_roads.shp ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
+				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif;
 
 		# Create VRTs for raster layers (this overcomes disk space processing issues)
 		echo -e "${GREEN}Creating VRTs ${YELLOW}";
 				gdalbuildvrt ${TEMP_PATH}/vrt/${WILDFILE}_ir.vrt ${TEMP_PATH}/basemap/${WILDFILE}_ir.tif;
 				gdalbuildvrt ${TEMP_PATH}/vrt/${WILDFILE}_hs.vrt ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif;
 				gdalbuildvrt ${TEMP_PATH}/vrt/${WILDFILE}_grid.vrt ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif;
-				gdalbuildvrt ${TEMP_PATH}/vrt/${WILDFILE}_roads.vrt ${TEMP_PATH}/roads/${WILDFILE}_roads.tif;
+				gdalbuildvrt ${TEMP_PATH}/vrt/${WILDFILE}_roads.vrt ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif;
 
 		
 			# Merge raster layers and create PDF/TIF

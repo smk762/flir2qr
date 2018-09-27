@@ -130,6 +130,14 @@ case "$2" in
 		SE_label="${TEMP_PATH}/label/${WILDFILE}_SE.png";
 		# cp ${TEMP_PATH}/label/${WILDFILE}* ${WWWPATH};
 
+	
+		ul=($(echo $NW|sed 's/,//'))
+		ulx=$(echo ${ul[0]})
+		uly=$(echo ${ul[1]})
+		lr=($(echo $SE|sed 's/,//'))
+		lrx=$(echo ${lr[0]})
+		lry=$(echo ${lr[1]})
+		
 		# clip vector data
 	  	echo -e "${PURPLE}Clipping vectors to IR fence${YELLOW}";
 		  	echo -e "${GREEN}Clipping grid ${YELLOW}";
@@ -149,7 +157,7 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 		#convert clipped vectors to rasters
 		echo -e "${PURPLE}Burning vectors to raster"; 
 	  		echo -e "${GREEN}Burning roads ${TEMP_PATH}/roads/${WILDFILE}_roads.tif${YELLOW}";
-				gdal_rasterize -burn 24 -burn 150 -burn 2 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/roads/${WILDFILE}_roads.shp ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
+				gdal_rasterize -te $ulx $lry $lrx $uly -burn 24 -burn 150 -burn 2 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/roads/${WILDFILE}_roads.shp ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
 				 cp ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif ${WWWPATH}
 				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif;
 				gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif

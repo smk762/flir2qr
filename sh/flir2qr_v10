@@ -221,7 +221,7 @@ case "$2" in
 			rm -Rf ${TEMP_PATH}/label/*;
 			
 			procTime=$SECONDS;
-			runTime=$(echo procTime/60-$startTime/60|bc)
+			runTime=$(echo $procTime/60-$startTime/60|bc)
 			echo "Script completed in $runTime minutes"
 		done
 		echo -e "Processing $2 complete"'\r' >> $FLIR2QR_PATH/log/flir2qr.log;
@@ -242,7 +242,7 @@ case "$2" in
 		#mv -f ${WWWPATH}/log/${WILDFILE}_combined.zip ${WWWPATH}/kmz/${z7_FILENAME}_combined.kmz;
 		
 		endTime=$SECONDS;
-		runTime=$(echo endTime/60-$startTime/60|bc)
+		runTime=$(echo $endTime/60-$startTime/60|bc)
 		echo "Script completed in $runTime minutes"
 		/home/$USER/emailnotifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWWPATH}/pdf/${WILDFILE}_overview.pdf" "http://kens-therm-001/flir2qr/${z7_FILENAME}"
 	 ;;

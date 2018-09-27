@@ -233,7 +233,7 @@ case "$2" in
 		endTime=$SECONDS;
 		runTime=$(echo endTime/60-$startTime/60|bc)
 		echo "Script completed in $runTime seconds"
-		/home/$USER/email.notifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWWPATH}/pdf/${WILDFILE}_overview.pdf" "http://kens-therm-001/flir2qr/${z7_FILENAME}"
+		/home/$USER/emailnotifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWWPATH}/pdf/${WILDFILE}_overview.pdf" "http://kens-therm-001/flir2qr/${z7_FILENAME}"
 	 ;;
 	*)
 	  echo -e "${RED}Unexpected file type '$2'. 7z Archive Only! ${WHITE}";

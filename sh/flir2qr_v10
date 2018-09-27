@@ -130,8 +130,12 @@ case "$2" in
 		SW_label="${TEMP_PATH}/label/${WILDFILE}_SW.png";
 		SE_label="${TEMP_PATH}/label/${WILDFILE}_SE.png";
 		echo "----------------------------------------------------------------------------";
-	  	echo $NW;
-	  	echo $SE;
+		ul=($(echo $NW|sed 's/,//'))
+		ulx=$(echo ${ul[0]})
+		uly=$(echo ${ul[1]})
+		lr=($(echo $SE|sed 's/,//'))
+		lrx=$(echo ${ll[0]})
+		lry=$(echo ${ll[1]})
 		echo "----------------------------------------------------------------------------";
 
 		# cp ${TEMP_PATH}/label/${WILDFILE}* ${WWWPATH};
@@ -153,8 +157,8 @@ case "$2" in
 				gdal_edit.py -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif;
 	  		echo -e "${GREEN}Burning roads ${TEMP_PATH}/roads/${WILDFILE}_roads.tif${YELLOW}";
 				gdal_rasterize -burn 244 -burn 150 -burn 2 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/roads/${WILDFILE}_roads.shp ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
-				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif;
-
+				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif;
+				gdal_translate -a_ullr $ulx $uly $lrx $lry -a_srs '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs' ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif
 
 		# Create VRTs for raster layers (this overcomes disk space processing issues)
 		echo -e "${GREEN}Creating VRTs ${YELLOW}";

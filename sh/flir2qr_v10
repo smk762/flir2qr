@@ -161,7 +161,7 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 				 cp ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif ${WWWPATH}
 				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif;
 				gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif
-				 gdalwarp  -t_srs ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif EPSG:4326 ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif
+				 gdalwarp -t_srs EPSG:4326 ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif
 				# gdal_translate -a_ullr $ulx $uly $lrx $lry ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif
 				echo "---------------------------------------------------"
 				gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif

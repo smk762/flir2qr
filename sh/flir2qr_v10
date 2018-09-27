@@ -99,7 +99,6 @@ case "$2" in
 			gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 ${TEMP_PATH}/mga_50/${WILDFILE}_ir_z50.tif ${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif -co COMPRESS=LZW -overwrite -ts $MAPSIZE -ot Byte;
 		echo -e "${GREEN}Scaling IR tif ${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif ${YELLOW}";
 			gdal_translate -a_srs EPSG:4326 ${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif ${TEMP_PATH}/basemap/${WILDFILE}_ir.tif -scale 0 255 -co COMPRESS=LZW -a_nodata 0 -of GTiff -ot Byte;
-		rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 		
 
 		# create clip fence
@@ -154,7 +153,8 @@ case "$2" in
 		lrx=$(echo ${lr[0]})
 		lry=$(echo ${lr[1]})
 		echo "----------------------------------------------------------------------------";
-
+rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
+		
 				
 			echo -e "${GREEN}Clipping roads ${YELLOW}";
 				ogr2ogr -clipsrc ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -clipsrclayer ${WILDFILE}_fence_wgs84 ${TEMP_PATH}/roads/${WILDFILE}_roads.shp $ROADSFILE -a_srs EPSG:4326 -progress;

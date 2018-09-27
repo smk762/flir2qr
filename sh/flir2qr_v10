@@ -179,7 +179,7 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 			echo -e "${PURPLE}Creating final TIF ${YELLOW}";
 				gdal_translate ${OUTPATH}/pdf/${WILDFILE}_merged.pdf ${OUTPATH}/tif/${WILDFILE}_merged.tif -a_srs EPSG:4326 -co COMPRESS=LZW;
 
-			gdal_translate ${OUTPATH}/tif/${WILDFILE}_merged.tif ${OUTPATH}/pdf/${WILDFILE}_merged.pdf -of PDF -a_srs EPSG:4326 -co EXTRA_IMAGES=$LOGO,5,0,1,$LEGEND,5,85,1 -outsize $MAPSIZE;
+			gdal_translate ${OUTPATH}/tif/${WILDFILE}_merged.tif ${OUTPATH}/pdf/${WILDFILE}_merged.pdf -of PDF -a_srs EPSG:4326 -co EXTRA_IMAGES=$LEGEND,5,85,1 -outsize $MAPSIZE;
 			
 		
 			# Moving output into www folders

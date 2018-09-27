@@ -220,9 +220,9 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 			rm -Rf ${TEMP_PATH}/label/*;
 			
 			
-		runTime=$(echo $endTime/60-$startTime/60|bc)
-		procTime=$(echo $SECONDS-$procTime|bc)
-		echo "Tile processed in $procTime seconds. Script runtime is $runTime minutes"
+			#runTime=$(echo $endTime/60-$startTime/60|bc)
+			#procTime=$(echo $SECONDS-$procTime|bc)
+			#echo "Tile processed in $procTime seconds. Script runtime is $runTime minutes"
 		done
 		
 		# Merging output for overview

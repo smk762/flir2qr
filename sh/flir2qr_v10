@@ -157,7 +157,7 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 		
 				
 			echo -e "${GREEN}Clipping roads ${YELLOW}";
-				ogr2ogr -clipsrc ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -clipsrclayer ${WILDFILE}_fence_wgs84 ${TEMP_PATH}/roads/${WILDFILE}_roads.shp $ROADSFILE -a_srs EPSG:4326 -progress;
+				ogr2ogr -clipsrc ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -clipsrclayer ${WILDFILE}_fence_wgs84 ${TEMP_PATH}/roads/${WILDFILE}_roads.shp $ROADSFILE -progress;
 				 cp ${TEMP_PATH}/roads/${WILDFILE}_roads.shp ${WWWPATH}
 				#gdalwarp -cutline ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -crop_to_cutline $ROADSFILE ${TEMP_PATH}/roads/${WILDFILE}_roads_temp.tif -co COMPRESS=LZW -dstnodata 0 -ot Byte -s_srs EPSG:4326 -t_srs EPSG:4326 -ts $MAPSIZE;		
 				#gdal_translate -expand rgb ${TEMP_PATH}/roads/${WILDFILE}_roads_temp.tif ${TEMP_PATH}/roads/${WILDFILE}_roads.tif

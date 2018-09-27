@@ -151,7 +151,7 @@ case "$2" in
 				gdal_edit.py -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif;
 	  		echo -e "${GREEN}Burning roads ${TEMP_PATH}/roads/${WILDFILE}_roads.tif${YELLOW}";
 				gdal_rasterize -burn 244 -burn 150 -burn 2 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/roads/${WILDFILE}_roads.shp ${TEMP_PATH}/basemap/${WILDFILE}_roads_temp.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
-				gdalwarp ${TEMP_PATH}/basemap/${WILDFILE}_roads_temp.tif ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif  -s_srs EPSG:4326 -t_srs EPSG:4326 -ts $MAPSIZE;
+				#gdalwarp ${TEMP_PATH}/basemap/${WILDFILE}_roads_temp.tif ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif  -s_srs EPSG:4326 -t_srs EPSG:4326 -ts $MAPSIZE;
 				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif;
 
 		# Create VRTs for raster layers (this overcomes disk space processing issues)

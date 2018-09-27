@@ -123,10 +123,10 @@ case "$2" in
 	  	SE=$(echo $(gdalinfo ${TEMP_PATH}/clipfence/${WILDFILE}_extent.tif | grep 'Lower Right' |  grep -o '(.*).' | sed 's/[()]//g'));
 	  	centroid=$(echo $(gdalinfo ${TEMP_PATH}/clipfence/${WILDFILE}_extent.tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
 	  	# Create corner coordinate text
-		convert -background none -fill blue -font "DejaVu-Sans" -pointsize 36 -gravity NorthWest label:"${NW}" png32:${TEMP_PATH}/label/${WILDFILE}_NW.png
-		convert -background none -fill blue -font "DejaVu-Sans" -pointsize 36 -gravity NorthEast label:"${NE}" png32:${TEMP_PATH}/label/${WILDFILE}_NE.png
-		convert -background none -fill blue -font "DejaVu-Sans" -pointsize 36 -gravity SouthWest label:"${SW}" png32:${TEMP_PATH}/label/${WILDFILE}_SW.png
-		convert -background none -fill blue -font "DejaVu-Sans" -pointsize 36 -gravity SouthEast label:"${SE}" png32:${TEMP_PATH}/label/${WILDFILE}_SE.png
+		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthWest label:"${NW}" png32:${TEMP_PATH}/label/${WILDFILE}_NW.png
+		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthEast label:"${NE}" png32:${TEMP_PATH}/label/${WILDFILE}_NE.png
+		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthWest label:"${SW}" png32:${TEMP_PATH}/label/${WILDFILE}_SW.png
+		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthEast label:"${SE}" png32:${TEMP_PATH}/label/${WILDFILE}_SE.png
 		NW_label="${TEMP_PATH}/label/${WILDFILE}_NW.png";
 		NE_label="${TEMP_PATH}/label/${WILDFILE}_NE.png";
 		SW_label="${TEMP_PATH}/label/${WILDFILE}_SW.png";
@@ -140,7 +140,7 @@ case "$2" in
 			  	ogr2ogr -clipsrc ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -clipsrclayer ${WILDFILE}_fence_wgs84 ${TEMP_PATH}/grid/${WILDFILE}_grid.shp $GRIDFILE -a_srs EPSG:4326 -progress; 
 			echo -e "${GREEN}Clipping roads ${YELLOW}";
 				# ogr2ogr -clipsrc ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -clipsrclayer ${WILDFILE}_fence_wgs84 ${TEMP_PATH}/roads/${WILDFILE}_roads.shp $ROADSFILE -a_srs EPSG:4326 -progress;
-				gdalwarp -cutline ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -crop_to_cutline $ROADSFILE ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif -co COMPRESS=LZW -dstnodata 0 -a_srs EPSG:4326 -ot Byte -s_srs EPSG:4326 -t_srs EPSG:4326 -ts $MAPSIZE;
+				gdalwarp -cutline ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -crop_to_cutline $ROADSFILE ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif -co COMPRESS=LZW -dstnodata 0 -ot Byte -s_srs EPSG:4326 -t_srs EPSG:4326 -ts $MAPSIZE;
 				
 
 		

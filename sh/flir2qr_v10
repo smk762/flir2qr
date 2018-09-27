@@ -158,11 +158,8 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 	  		echo -e "${GREEN}Burning roads ${TEMP_PATH}/roads/${WILDFILE}_roads.tif${YELLOW}";
 				gdal_rasterize -te $ulx $lry $lrx $uly -burn 24 -burn 150 -burn 2 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/roads/${WILDFILE}_roads.shp ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
 				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif;
-				gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif
 				 gdalwarp -t_srs EPSG:4326 ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif
 				# gdal_translate -a_ullr $ulx $uly $lrx $lry ${TEMP_PATH}/basemap/${WILDFILE}_roads_NS.tif ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif
-				echo "---------------------------------------------------"
-				gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_roads.tif
 		# Create VRTs for raster layers (this overcomes disk space processing issues)
 		echo -e "${GREEN}Creating VRTs ${YELLOW}";
 				gdalbuildvrt ${TEMP_PATH}/vrt/${WILDFILE}_ir.vrt ${TEMP_PATH}/basemap/${WILDFILE}_ir.tif;

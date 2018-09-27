@@ -29,7 +29,7 @@ OUTPATH="${FLIR2QR_PATH}/output/${z7_FILENAME}";
 
 # Define vector layers
 #ROADSFILE="$FLIR2QR_PATH/vectors/sample_roads_4m_buff.shp";
-ROADSFILE="$FLIR2QR_PATH/vectors/roads_test.tif";
+ROADSFILE="$FLIR2QR_PATH/vectors/rds_test.tif";
 GRIDFILE="$FLIR2QR_PATH/vectors/100m_grid_wgs84_1m_buff.shp";
 
 # Define legend and logo images (inactive at the moment)

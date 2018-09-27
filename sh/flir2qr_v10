@@ -1,7 +1,6 @@
 #!/bin/bash
 # TO TEST - /opt/flir2qr/sh/flir2qr_v10 /opt/flir2qr FireFlight_20180601_121018.7z
 # IN CASE OF PERMISSIONS ERRORS, CHECK README at https://github.com/smk762/flir2qr
-# PNG 000037 is an example where file space issue exists.
 RED='\033[1;0;31m';
 WHITE='\033[1;37m';
 BLUE='\033[1;34m';
@@ -16,9 +15,7 @@ MAPSIZE="2000 1600";
 PIXELRANGE="0 8000";
 
 # TODOs
-echo 'to do: use pwg files to derive EPSG';
 echo 'reduce vector variable to folder';
-echo 'debug filesize issues';
 echo 'create PDF before TIF';
 
 # Set install and output paths
@@ -227,7 +224,7 @@ case "$2" in
 	  	#cd ${WWWPATH}/log/${WILDFILE}_combined.kml;
 	  	#zip ${WWWPATH}/log/${WILDFILE}_combined.zip . -r;
 		#mv -f ${WWWPATH}/log/${WILDFILE}_combined.zip ${WWWPATH}/kmz/${z7_FILENAME}_combined.kmz;
-		/home/$USER/email.notifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWWPATH}/pdf/${WILDFILE}_overview.pdf"
+		/home/$USER/email.notifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWWPATH}/pdf/${WILDFILE}_overview.pdf" "http://kens-therm-001/flir2qr/${z7_FILENAME}"
 	 ;;
 	*)
 	  echo -e "${RED}Unexpected file type '$2'. 7z Archive Only! ${WHITE}";

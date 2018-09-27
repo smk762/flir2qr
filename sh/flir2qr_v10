@@ -13,6 +13,7 @@ timestamp=$(date +%F_%T);
 IP="$(echo -e $(hostname -I) | tr -d '[:space:]')";
 MAPSIZE="2000 1600";
 PIXELRANGE="0 8000";
+startTime=$SECONDS;
 
 # TODOs
 echo 'reduce vector variable to folder';
@@ -128,6 +129,10 @@ case "$2" in
 		NE_label="${TEMP_PATH}/label/${WILDFILE}_NE.png";
 		SW_label="${TEMP_PATH}/label/${WILDFILE}_SW.png";
 		SE_label="${TEMP_PATH}/label/${WILDFILE}_SE.png";
+		echo "----------------------------------------------------------------------------";
+	  	echo $NW;
+	  	echo $SE;
+		echo "----------------------------------------------------------------------------";
 
 		# cp ${TEMP_PATH}/label/${WILDFILE}* ${WWWPATH};
 
@@ -224,12 +229,15 @@ case "$2" in
 	  	#cd ${WWWPATH}/log/${WILDFILE}_combined.kml;
 	  	#zip ${WWWPATH}/log/${WILDFILE}_combined.zip . -r;
 		#mv -f ${WWWPATH}/log/${WILDFILE}_combined.zip ${WWWPATH}/kmz/${z7_FILENAME}_combined.kmz;
+		
+		endTime=$SECONDS;
+		runTime=$(echo endTime/60-$startTime/60|bc)
+		echo "Script completed in $runTime seconds"
 		/home/$USER/email.notifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWWPATH}/pdf/${WILDFILE}_overview.pdf" "http://kens-therm-001/flir2qr/${z7_FILENAME}"
 	 ;;
 	*)
 	  echo -e "${RED}Unexpected file type '$2'. 7z Archive Only! ${WHITE}";
 	  echo "$timestamp - bad filetype uploaded - $2"$'\r' >> ${FLIR2QR_PATH}/log/error.log;
 	;;
-		
 esac
 		

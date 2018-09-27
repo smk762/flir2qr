@@ -216,8 +216,10 @@ case "$2" in
 		rm -Rf ${WWWPATH}/kml;
 		rm -Rf ${WWWPATH}/overlay;
 		cp -f $FLIR2QR_PATH/log/* ${WWWPATH}/log;
+		# Merging output for overview
 		gdalbuildvrt ${WWWPATH}/log/${WILDFILE}_combined.vrt ${OUTPATH}/tif/*.tif;
-	  	echo -e "${PURPLE}Creating KMZ ${YELLOW}";
+		gdal_merge.py -o ${WWWPATH}/pdf/${WILDFILE}_overview.pdf ${WWWPATH}/log/${WILDFILE}_combined.vrt -v -co COMPRESS=DEFLATE -co tiled=yes;
+	  	#echo -e "${PURPLE}Creating KMZ ${YELLOW}";
 	  	#gdal2tiles.py -k -t ${WWWPATH}/log/${WILDFILE}_combined.vrt ${WWWPATH}/log/${WILDFILE}_combined.kml;
 	  	#cd ${WWWPATH}/log/${WILDFILE}_combined.kml;
 	  	#zip ${WWWPATH}/log/${WILDFILE}_combined.zip . -r;
@@ -227,6 +229,6 @@ case "$2" in
 	  echo -e "${RED}Unexpected file type '$2'. 7z Archive Only! ${WHITE}";
 	  echo "$timestamp - bad filetype uploaded - $2"$'\r' >> ${FLIR2QR_PATH}/log/error.log;
 	;;
-
+		
 esac
 		

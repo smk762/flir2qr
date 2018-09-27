@@ -143,7 +143,7 @@ case "$2" in
 		  	echo -e "${GREEN}Clipping grid ${YELLOW}";
 			  	ogr2ogr -clipsrc ${TEMP_PATH}/clipfence/${WILDFILE}_fence_wgs84.shp -clipsrclayer ${WILDFILE}_fence_wgs84 ${TEMP_PATH}/grid/${WILDFILE}_grid.shp $GRIDFILE -a_srs EPSG:4326 -progress; 
 		  	echo -e "${GREEN}Burning grid ${TEMP_PATH}/grid/${WILDFILE}_grid.tif ${YELLOW} ${YELLOW}";
-				gdal_rasterize -burn 10 -burn 250 -burn 250 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/grid/${WILDFILE}_grid.shp ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
+				gdal_rasterize -te $ulx $lry $lrx $uly -burn 10 -burn 250 -burn 250 -burn 255 -ts $MAPSIZE ${TEMP_PATH}/grid/${WILDFILE}_grid.shp ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif -co COMPRESS=LZW -init 0 -a_srs EPSG:4326 -ot Byte;
 				gdal_edit.py -colorinterp_4 alpha ${TEMP_PATH}/basemap/${WILDFILE}_grid.tif;
 				
 	

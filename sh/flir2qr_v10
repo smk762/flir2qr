@@ -224,7 +224,8 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 			#runTime=$(echo $endTime/60-$startTime/60|bc)
 			#procTime=$(echo $SECONDS-$procTime|bc)
 			#echo "Tile processed in $procTime seconds. Script runtime is $runTime minutes"
-			/home/$USER/emailnotifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWWPATH}/kmz/${WILDFILE}_qr.kmz" "http://kens-therm-001/flir2qr/${z7_FILENAME}"
+			qrencode -o ${WWWPATH}/qr/mission.png http://$IP/flir2qr/${z7_FILENAME}/;
+			/home/$USER/emailnotifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWWPATH}/qr/mission.png" "http://kens-therm-001/flir2qr/${z7_FILENAME}"
 		done
 		
 		# Merging output for overview

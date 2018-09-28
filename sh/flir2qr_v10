@@ -44,6 +44,7 @@ mkdir ${FLIR2QR_PATH}/output/${z7_FILENAME};
 	declare -a OUTDIRS=('tif' 'qr' 'pdf' 'tif' 'kmz' 'log' 'kml' '\');
 	for dir in "${OUTDIRS[@]}"; do  mkdir -p ${FLIR2QR_PATH}/output/${z7_FILENAME}/$dir; done
 	for dir in "${OUTDIRS[@]}"; do  mkdir -p ${WWWPATH}/$dir; done
+	rm -rf ${WWWPATH}/kml
 
 # process data if path/file parameters lead to a file
 echo -e "Started processing $2 at $timestamp"$'\r' >> $FLIR2QR_PATH/log/flir2qr.log;
@@ -244,7 +245,11 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 		echo -e "${BLUE}Processing $2 complete! ${WHITE}";
 		echo -e "${GREEN}Output data available at http://${IP}/flir2qr/${z7_FILENAME} ${WHITE}";
 		
-		rm -Rf ${WWWPATH}/kml;
+		mkdir ${WWWPATH}/overviews;
+		cp ${WWWPATH}/kmz/overview.kmz ${WWWPATH}/overviews/overview.kmz
+		cp ${WWWPATH}/tif/overview.tif ${WWWPATH}/overviews/overview.tif
+		cp ${WWWPATH}/pdf/overview.pdf ${WWWPATH}/overviews/overview.pdf
+		
 		rm -Rf ${WWWPATH}/overlay;
 		cp -f $FLIR2QR_PATH/log/* ${WWWPATH}/log;
 		

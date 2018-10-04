@@ -1,3 +1,5 @@
+![flir2qr concept diagram](https://github.com/smk762/flir2qr/raw/master/img/concept.jpg)
+
 # flir2qr
 A bash script using GDAL and OGR to create a digital map for use in Avenza Maps, QGIS, Google Earth and many other GIS software apps.
 

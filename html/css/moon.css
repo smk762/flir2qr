@@ -1,0 +1,44 @@
+html {
+	height:100%;
+	width:100%;
+}
+body {
+	height:100%;
+	width:100%;
+	background-position: center;
+	background-image: url("");
+	background-blend-mode: overlay;
+	background-repeat: repeat;
+	background-color:  #000000; 
+	z-index: 0;
+	overflow: hidden;
+	display: block;  /* No floating content on sides 
+	font-family: Verdana, Geneva, sans-serif; */
+    font-family: 'Raleway', sans-serif;
+	font-size: 1.2vw;
+	color:#4A8282;
+	text-align: center;
+	backface-visibility:hidden;
+	-webkit-backface-visibility:hidden; 
+	-moz-backface-visibility:hidden; 
+	text-shadow: 0px 0px 10px rgba(0, 0, 0, 1);
+}
+#reserved {
+    font-family: 'Roboto', sans-serif;
+    font-family: 'Lato', sans-serif;
+    font-family: 'Oswald', sans-serif;
+    font-family: 'Open Sans', sans-serif;
+}
+.moonImg {
+	position: absolute;
+	left:32%;
+	top:30%;
+}
+#logo {
+  mix-blend-mode: difference;
+}
+#moon {
+}
+a {
+	text-decoration-style: none;
+}

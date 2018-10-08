@@ -402,10 +402,10 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 	  	SE_ov_mga=$(echo $(gdalinfo $ov_mga_tif | grep 'Lower Right' |  grep -o '(.*).' | sed 's/[()]//g'));
 	  	centroid_ov_mga=$(echo $(gdalinfo $ov_mga_tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
 	  	# Create mga labels
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthWest label:"${NW_ov_mga}" png32:${TEMP_PATH}/label/NW_ov_mga.png;
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthEast label:"${NE_ov_mga}" png32:${TEMP_PATH}/label/NE_ov_mga.png;
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthWest label:"${SW_ov_mga}" png32:${TEMP_PATH}/label/SW_ov_mga.png;
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthEast label:"${SE_ov_mga}" png32:${TEMP_PATH}/label/SE_ov_mga.png;
+		convert -background none -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity NorthWest label:"${NW_ov_mga}" png32:${TEMP_PATH}/label/NW_ov_mga.png;
+		convert -background none -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity NorthEast label:"${NE_ov_mga}" png32:${TEMP_PATH}/label/NE_ov_mga.png;
+		convert -background none -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity SouthWest label:"${SW_ov_mga}" png32:${TEMP_PATH}/label/SW_ov_mga.png;
+		convert -background none -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity SouthEast label:"${SE_ov_mga}" png32:${TEMP_PATH}/label/SE_ov_mga.png;
 		NW_ov_mga_img="${TEMP_PATH}/label/NW_ov_mga.png";
 		NE_ov_mga_img="${TEMP_PATH}/label/NE_ov_mga.png";
 		SW_ov_mga_img="${TEMP_PATH}/label/SW_ov_mga.png";

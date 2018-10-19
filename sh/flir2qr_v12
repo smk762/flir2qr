@@ -67,8 +67,9 @@ case "$2" in
 		else echo -e "$RANDOM" > "$FLIR2QR_PATH/temp.txt";
 	fi
 	TEMPDIR=$(cat $FLIR2QR_PATH/temp.txt);
-	TEMP_PATH=$FLIR2QR_PATH/temp/$TEMPDIR;
-	rm -Rf ${TEMP_PATH};
+	rm -rf $FLIR2QR_PATH/temp/$z7_FILENAME;
+	mkdir $FLIR2QR_PATH/temp/$z7_FILENAME;
+	TEMP_PATH=$FLIR2QR_PATH/temp/${z7_FILENAME};
 	echo -e "${PURPLE}Creating temporary folders in ${TEMP_PATH}";
 	# create temp subfolders
 	declare -a PROCDIRS=('raw' 'mga_50' 'wgs84' 'clipfence' 'hotspot' 'basemap' 'roads' 'kmz' 'kml' 'shp' 'grid' 'overlay' 'vrt' 'label' 'pdf');
@@ -455,7 +456,7 @@ rm 	${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif;
 
 		endTime="$SECONDS";
 		qrencode -o ${WWW_PATH}/qr/mission.png http://$IP/flir2qr/${z7_FILENAME}/;
-		/home/$USER/emailnotifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWW_PATH}/qr/mission.png" "http://kens-therm-001/flir2qr/${z7_FILENAME}";
+		/home/$USER/emailnotifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWW_PATH}/overview/overview.pdf" "http://kens-therm-001/flir2qr/${z7_FILENAME}";
 	 
 	 	#Setup GUI
 	 	cp -r /opt/flir2qr/html/* ${WWW_PATH};

@@ -113,7 +113,8 @@ echo -e "Checking for 7z archive";
 case "$2" in
 *.7z)
 	timestamp=$(date +%F_%T);
-	IP="$(echo -e $(hostname -I) | tr -d '[:space:]')";
+	#IP="$(echo -e $(hostname -I) | tr -d '[:space:]')";
+	IP="static.dbca.wa.gov.au"
 	MAPWIDTH=2000
 	MAPHEIGHT=1600
 	MAPSIZE="$MAPWIDTH $MAPHEIGHT";
@@ -365,7 +366,7 @@ case "$2" in
 		sed -i 's/broad, baer, bhyb,//' "$slippy";
 		sed -i 's/osm, tmsoverlay]);//' "$slippy";
 		sed -i 's/gmap, gsat, ghyb, gter,/bhyb, broad, baer, tmsoverlay]);/' "$slippy";
-		
+		sed -i 's,http:,https:,g' "$slippy";
  		echo -e "${PURPLE}Creating KML Overview Overlay ${YELLOW}";
 		  	gdal2tiles.py -q -k -t $2 ${TEMP_PATH}/${z7_FILENAME}_overview.vrt ${TEMP_PATH}/kmz/overview.kml;
 		  	cd ${TEMP_PATH}/kmz/overview.kml;
@@ -392,6 +393,7 @@ case "$2" in
 		  	sed -i 's,QRIMG,'"${z7_FILENAME}_overview_pdf.png"',g' "${WWW_PATH}/kml/${z7_FILENAME}_qr.kml";
 		  	sed -i 's/CENTROID/'"$centroid_ov_wgs"'/g' "${WWW_PATH}"'/kml/'"${z7_FILENAME}"'_qr.kml';
 		  	sed -i 's/KMLNAME/'"${z7_FILENAME} QR code"'/g' "${WWW_PATH}"'/kml/'"${z7_FILENAME}"'_qr.kml';
+
 		  	cd  ${OUTPATH};
 		  	zip ${z7_FILENAME}_qr.zip ${WWW_PATH}/kml/${z7_FILENAME}_qr.kml ${WWW_PATH}/qr/${z7_FILENAME}_overview_pdf.png -j;
 			mv -f ${z7_FILENAME}_qr.zip ${WWW_PATH}/overview/${z7_FILENAME}_qr.kmz;			
@@ -407,14 +409,13 @@ case "$2" in
 	 	#Setup GUI
 		echo -e "${PURPLE}greating GUI ${YELLOW}";
 	 	cp -r /opt/flir2qr/html/* ${WWW_PATH};
-	 	HTTP_PATH=http://${IP}/flir2qr/${z7_FILENAME};
+	 	HTTP_PATH="http://${IP}/flir2qr/${z7_FILENAME}";
 	 	gui="${WWW_PATH}/index.html";
 		sed -i 's=WEBMAPLINK='"${HTTP_PATH}"'\/overview\/map\/=' "$gui";
-		sed -i 's=PDFLINK='"${HTTP_PATH}"'\/pdf\/=' "$gui";
-		sed -i 's=TIFLINK='"${HTTP_PATH}"'\/tif\/=' "$gui";
-		sed -i 's=KMZLINK='"${HTTP_PATH}"'\/kmz\/=' "$gui";
-		sed -i 's=OVERVIEWLINK='"${HTTP_PATH}"'\/overview\/=' "$gui";
-		
+		sed -i 's=PDFLINK='"${HTTP_PATH}"'\/overview\/overview.pdf=' "$gui";
+		sed -i 's=TIFLINK='"${HTTP_PATH}"'\/overview\/overview_wgs.tif=' "$gui";
+		sed -i 's=KMZLINK='"${HTTP_PATH}"'\/overview\/overview.kmz=' "$gui";
+		sed -i 's=QRKML='"${HTTP_PATH}"'\/overview\/'"${z7_FILENAME}"'_qr.kmz=' "$gui"
 		echo "GUI updated";
 		runTime=$(echo $endTime/60-$startTime/60|bc)
 		echo "Script completed in $runTime minutes";

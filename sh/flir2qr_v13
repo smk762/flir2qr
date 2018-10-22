@@ -16,8 +16,8 @@ getCRSlabels () {
 	# Create CRS Labels
 	WGS_label="WGS84";
 	MGA_label="MGA Zone 50";
-	convert -background none -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity South label:"${MGA_label}" png32:${TEMP_PATH}/label/mga_label.png;
-	convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity South label:"${WGS_label}" png32:${TEMP_PATH}/label/wgs84_label.png;
+	convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity South label:"${MGA_label}" png32:${TEMP_PATH}/label/mga_label.png;
+	convert -background white -fill green -font "DejaVu-Sans" -pointsize 36 -gravity South label:"${WGS_label}" png32:${TEMP_PATH}/label/wgs84_label.png;
 	mga_img="${TEMP_PATH}/label/mga_label.png";
 	wgs_img="${TEMP_PATH}/label/wgs84_label.png";
 
@@ -53,10 +53,10 @@ getCRSlabels () {
 	  	centroid=$(echo $(gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
 	  	
 	  	# Create WGS labels
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthWest label:"${NW}" png32:${TEMP_PATH}/label/${WILDFILE}_NW_wgs.png;
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthEast label:"${NE}" png32:${TEMP_PATH}/label/${WILDFILE}_NE_wgs.png;
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthWest label:"${SW}" png32:${TEMP_PATH}/label/${WILDFILE}_SW_wgs.png;
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthEast label:"${SE}" png32:${TEMP_PATH}/label/${WILDFILE}_SE_wgs.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthWest label:"${NW}" png32:${TEMP_PATH}/label/${WILDFILE}_NW_wgs.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthEast label:"${NE}" png32:${TEMP_PATH}/label/${WILDFILE}_NE_wgs.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthWest label:"${SW}" png32:${TEMP_PATH}/label/${WILDFILE}_SW_wgs.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthEast label:"${SE}" png32:${TEMP_PATH}/label/${WILDFILE}_SE_wgs.png;
 		NW_wgs="${TEMP_PATH}/label/${WILDFILE}_NW_wgs.png";
 		NE_wgs="${TEMP_PATH}/label/${WILDFILE}_NE_wgs.png";
 		SW_wgs="${TEMP_PATH}/label/${WILDFILE}_SW_wgs.png";
@@ -81,10 +81,10 @@ getCRSlabels () {
 	  	SE_mga=$(echo $(gdalinfo ${TEMP_PATH}/mga_50/${WILDFILE}_hs.tif | grep 'Lower Right' |  grep -o '(.*).' | sed 's/[()]//g'));
 
 	  	#Create MGA labels
-		convert -background none -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity NorthWest label:"${NW_mga}" png32:${TEMP_PATH}/label/${WILDFILE}_NW_mga.png;
-		convert -background none -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity NorthEast label:"${NE_mga}" png32:${TEMP_PATH}/label/${WILDFILE}_NE_mga.png;
-		convert -background none -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity SouthWest label:"${SW_mga}" png32:${TEMP_PATH}/label/${WILDFILE}_SW_mga.png;
-		convert -background none -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity SouthEast label:"${SE_mga}" png32:${TEMP_PATH}/label/${WILDFILE}_SE_mga.png;
+		convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity NorthWest label:"${NW_mga}" png32:${TEMP_PATH}/label/${WILDFILE}_NW_mga.png;
+		convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity NorthEast label:"${NE_mga}" png32:${TEMP_PATH}/label/${WILDFILE}_NE_mga.png;
+		convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity SouthWest label:"${SW_mga}" png32:${TEMP_PATH}/label/${WILDFILE}_SW_mga.png;
+		convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity SouthEast label:"${SE_mga}" png32:${TEMP_PATH}/label/${WILDFILE}_SE_mga.png;
 		NW_mga="${TEMP_PATH}/label/${WILDFILE}_NW_mga.png";
 		NE_mga="${TEMP_PATH}/label/${WILDFILE}_NE_mga.png";
 		SW_mga="${TEMP_PATH}/label/${WILDFILE}_SW_mga.png";
@@ -234,7 +234,7 @@ case "$2" in
 		lrx=$(echo $lrx+$buffer|bc);
 		lry=$(echo $lry-$buffer|bc);
 
-		gdalwarp -dstalpha -te $ulx $lry $lrx $uly -co COMPRESS=DEFLATE -overwrite -ts $MAPSIZE -ot Byte ${FLIR2QR_PATH}/base/2131_ops.tif ${WWW_PATH}/overview/COG_base.tif
+		gdalwarp -dstalpha -te $ulx $lry $lrx $uly -co COMPRESS=DEFLATE -overwrite -ts $MAPSIZE -ot Byte ${FLIR2QR_PATH}/base/2031_ops.tif ${WWW_PATH}/overview/COG_base.tif
 		#cp ${FLIR2QR_PATH}/base/2131_ops.tif ${WWW_PATH}/overview/COG_base.tif
 		
 		echo -e "${PURPLE}Creating TIF overview ${YELLOW}";
@@ -255,9 +255,9 @@ case "$2" in
 		WGS_label="WGS84";
 		MGA_label="MGA Zone 50";
 		title_txt="MISSION: ${z7_FILENAME}";
-		convert -background none -fill CornflowerBlue -font "DejaVu-Sans" -pointsize 60 -gravity North label:"${title_txt}" png32:${TEMP_PATH}/label/${z7_FILENAME}_title.png;
-		convert -background none -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity South label:"${MGA_label}" png32:${TEMP_PATH}/label/mga_label.png;
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity South label:"${WGS_label}" png32:${TEMP_PATH}/label/wgs84_label.png;
+		convert -background white -fill CornflowerBlue -font "DejaVu-Sans" -pointsize 60 -gravity North label:"${title_txt}" png32:${TEMP_PATH}/label/${z7_FILENAME}_title.png;
+		convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 36 -gravity South label:"${MGA_label}" png32:${TEMP_PATH}/label/mga_label.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 36 -gravity South label:"${WGS_label}" png32:${TEMP_PATH}/label/wgs84_label.png;
 		mga_img="${TEMP_PATH}/label/mga_label.png";
 		wgs_img="${TEMP_PATH}/label/wgs84_label.png";
 		title_img="${TEMP_PATH}/label/${z7_FILENAME}_title.png";
@@ -309,10 +309,10 @@ case "$2" in
 	  	SE_ov_wgs=$(echo $(gdalinfo $ov_wgs_tif | grep 'Lower Right' |  grep -o '(.*).' | sed 's/[()]//g'));
 	  	centroid_ov_wgs=$(echo $(gdalinfo $ov_wgs_tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
 	  	# Create WGS labels
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthWest label:"${NW_ov_wgs}" png32:${TEMP_PATH}/label/NW_ov_wgs.png;
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthEast label:"${NE_ov_wgs}" png32:${TEMP_PATH}/label/NE_ov_wgs.png;
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthWest label:"${SW_ov_wgs}" png32:${TEMP_PATH}/label/SW_ov_wgs.png;
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthEast label:"${SE_ov_wgs}" png32:${TEMP_PATH}/label/SE_ov_wgs.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthWest label:"${NW_ov_wgs}" png32:${TEMP_PATH}/label/NW_ov_wgs.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthEast label:"${NE_ov_wgs}" png32:${TEMP_PATH}/label/NE_ov_wgs.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthWest label:"${SW_ov_wgs}" png32:${TEMP_PATH}/label/SW_ov_wgs.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthEast label:"${SE_ov_wgs}" png32:${TEMP_PATH}/label/SE_ov_wgs.png;
 		NW_ov_wgs_img="${TEMP_PATH}/label/NW_ov_wgs.png";
 		NE_ov_wgs_img="${TEMP_PATH}/label/NE_ov_wgs.png";
 		SW_ov_wgs_img="${TEMP_PATH}/label/SW_ov_wgs.png";
@@ -338,10 +338,10 @@ case "$2" in
 	  	SE_ov_mga=$(echo $(gdalinfo $ov_mga_tif | grep 'Lower Right' |  grep -o '(.*).' | sed 's/[()]//g'));
 	  	centroid_ov_mga=$(echo $(gdalinfo $ov_mga_tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
 	  	# Create mga labels
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthWest label:"${NW_ov_mga}" png32:${TEMP_PATH}/label/NW_ov_mga.png;
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthEast label:"${NE_ov_mga}" png32:${TEMP_PATH}/label/NE_ov_mga.png;
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthWest label:"${SW_ov_mga}" png32:${TEMP_PATH}/label/SW_ov_mga.png;
-		convert -background none -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthEast label:"${SE_ov_mga}" png32:${TEMP_PATH}/label/SE_ov_mga.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthWest label:"${NW_ov_mga}" png32:${TEMP_PATH}/label/NW_ov_mga.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 36 -gravity NorthEast label:"${NE_ov_mga}" png32:${TEMP_PATH}/label/NE_ov_mga.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthWest label:"${SW_ov_mga}" png32:${TEMP_PATH}/label/SW_ov_mga.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 36 -gravity SouthEast label:"${SE_ov_mga}" png32:${TEMP_PATH}/label/SE_ov_mga.png;
 		NW_ov_mga_img="${TEMP_PATH}/label/NW_ov_mga.png";
 		NE_ov_mga_img="${TEMP_PATH}/label/NE_ov_mga.png";
 		SW_ov_mga_img="${TEMP_PATH}/label/SW_ov_mga.png";
@@ -366,7 +366,10 @@ case "$2" in
 		sed -i 's/broad, baer, bhyb,//' "$slippy";
 		sed -i 's/osm, tmsoverlay]);//' "$slippy";
 		sed -i 's/gmap, gsat, ghyb, gter,/bhyb, broad, baer, tmsoverlay]);/' "$slippy";
-		sed -i 's,http:,https:,g' "$slippy";
+		sed -i 's,http://openlayers.org/api/2.12/OpenLayers.js,https://static.dbca.wa.gov.au/flir2qr/js/ol.js,g' "$slippy";
+                sed -i 's,http://www.openlayers.org/api/2.12/OpenLayers.js,https://static.dbca.wa.gov.au/flir2qr/js/ol.js,g' "$slippy";
+                sed -i 's,theme/default/style.css,https://static.dbca.wa.gov.au/flir2qr/css/style.css,g' "$slippy";
+
  		echo -e "${PURPLE}Creating KML Overview Overlay ${YELLOW}";
 		  	gdal2tiles.py -q -k -t $2 ${TEMP_PATH}/${z7_FILENAME}_overview.vrt ${TEMP_PATH}/kmz/overview.kml;
 		  	cd ${TEMP_PATH}/kmz/overview.kml;

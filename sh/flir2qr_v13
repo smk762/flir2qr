@@ -136,25 +136,25 @@ case "$2" in
 	# Create output folders for archiving
 	OUTPATH="${FLIR2QR_PATH}/output/${z7_FILENAME}";
 	rm -Rf ${OUTPATH};
-	mkdir ${OUTPATH};
+	mkdir -p ${OUTPATH};
 	for dir in "${OUTDIRS[@]}"; do  mkdir -p ${OUTPATH}/$dir; done
 
 	# Create temp folders for processing
 	TEMP_PATH=$FLIR2QR_PATH/temp/${z7_FILENAME};	
 	rm -Rf ${TEMP_PATH};
-	mkdir ${TEMP_PATH};
+	mkdir -p ${TEMP_PATH};
 		echo -e "${PURPLE}Creating temporary folders in ${TEMP_PATH}";
 		for dir in "${PROCDIRS[@]}"; do  mkdir -p ${TEMP_PATH}/$dir; done
 
 	# Create www folders for display
 	WWW_PATH="/var/www/html/flir2qr/${z7_FILENAME}";
 	rm -Rf ${WWW_PATH};
-	mkdir ${WWW_PATH};
+	mkdir -p ${WWW_PATH};
 	for dir in "${OUTDIRS[@]}"; do  mkdir -p ${WWW_PATH}/$dir; done
 
 	# Create output folders for archiving and public transmission
 	rm -Rf ${FLIR2QR_PATH}/output/${z7_FILENAME};
-	mkdir ${FLIR2QR_PATH}/output/${z7_FILENAME};
+	mkdir -p ${FLIR2QR_PATH}/output/${z7_FILENAME};
 
 	# process data if path/file parameters lead to a file
 	echo -e "Started processing $2 at $timestamp"                                 
@@ -361,14 +361,15 @@ case "$2" in
 		echo -e "${PURPLE}Creating Bing overview";
 		gdal2tiles.py -q -k -t $2 -b Ag4sqB8_1kZH0Uqc4M1kZeN1hoWHTvmv-cv7PR_YO04PKMvevlYzKyLEcEuy_j_J ${TEMP_PATH}/${z7_FILENAME}_overview.vrt ${WWW_PATH}/overview/map;
 		mv ${WWW_PATH}/overview/map/openlayers.html ${WWW_PATH}/overview/map/index.html;
-
+		mkdir  ${WWW_PATH}/overview/map/img;
+		cp /opt/flir/img/*.png  ${WWW_PATH}/overview/map/img ${WWW_PATH}/overview/map/img;
 		slippy=${WWW_PATH}/overview/map/index.html;
 		sed -i 's/broad, baer, bhyb,//' "$slippy";
 		sed -i 's/osm, tmsoverlay]);//' "$slippy";
 		sed -i 's/gmap, gsat, ghyb, gter,/bhyb, broad, baer, tmsoverlay]);/' "$slippy";
 		sed -i 's,http://openlayers.org/api/2.12/OpenLayers.js,https://static.dbca.wa.gov.au/flir2qr/js/ol.js,g' "$slippy";
                 sed -i 's,http://www.openlayers.org/api/2.12/OpenLayers.js,https://static.dbca.wa.gov.au/flir2qr/js/ol.js,g' "$slippy";
-                sed -i 's,theme/default/style.css,https://static.dbca.wa.gov.au/flir2qr/css/style.css,g' "$slippy";
+                sed -i 's,</title>,</title><link rel="stylesheet" href="https://static.dbca.wa.gov.au/flir2qr/css/style.css" />,g' "$slippy";
 
  		echo -e "${PURPLE}Creating KML Overview Overlay ${YELLOW}";
 		  	gdal2tiles.py -q -k -t $2 ${TEMP_PATH}/${z7_FILENAME}_overview.vrt ${TEMP_PATH}/kmz/overview.kml;
@@ -405,8 +406,8 @@ case "$2" in
 		#cp -f $FLIR2QR_PATH/log/${z7_FILENAME}.log ${WWW_PATH}/log/${z7_FILENAME}.log;
 
 		endTime="$SECONDS";
-		qrencode -o ${WWW_PATH}/qr/mission.png http://$IP/flir2qr/${z7_FILENAME}/;
-		/home/$USER/emailnotifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWW_PATH}/overview/overview.pdf" "http://kens-therm-001/flir2qr/${z7_FILENAME}";
+		qrencode -o ${WWW_PATH}/qr/mission.png https://$IP/flir2qr/${z7_FILENAME}/;
+		/home/$USER/emailnotifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWW_PATH}/overview/overview.pdf" "https://static.dbca.wa.gov.au/flir2qr/${z7_FILENAME}";
 	 
 
 	 	#Setup GUI

@@ -2,7 +2,37 @@
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
 	<name>KMLNAME</name>
+    <Style id="foot_style">
+      <PolyStyle>
+        <color>00ff8080</color>
+        <fill>0</fill>
+      </PolyStyle>
+    </Style>
+
+    <Style id="step_style">
+      <PolyStyle>
+        <color>7fff8080</color>
+      </PolyStyle>
+    </Style>
+
+    <StyleMap id="walk_style">
+        <Pair>
+            <key>normal</key>
+            <styleUrl>#foot_style</styleUrl>
+        </Pair>
+        <Pair>
+            <key>highlight</key>
+            <styleUrl>#step_style</styleUrl>
+        </Pair>
+    </StyleMap> 
 	<Style id="failed0">
+
+
+
+
+
+
+
 		<IconStyle>
 			<scale>3</scale>
 			<Icon>
@@ -40,6 +70,14 @@
 		<Point>
 			<coordinates>CENTROID</coordinates>
 		</Point>
+	</Placemark>
+		<Placemark>
+			<styleUrl>#walk_style</styleUrl>
+			<Style><LineStyle><color>ff0000ff</color>
+		</LineStyle><PolyStyle><fill>0</fill></PolyStyle>
+	</Style><ExtendedData><SchemaData schemaUrl='#fence'>
+	<SimpleData name='TILE'>PDF_URL</SimpleData></SchemaData></ExtendedData> 
+		FOOTPRINT
 	</Placemark>
 </Document>
 </kml>

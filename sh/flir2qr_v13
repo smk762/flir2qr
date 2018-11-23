@@ -27,6 +27,7 @@ case "$2" in
 	# Set script install path
 	z7_FILENAME="${2%.*}";
 	FLIR2QR_PATH="/opt/flir2qr";
+	HTTP_PATH="http://${IP}/flir2qr/${z7_FILENAME}";
 
 	# define processing and output subfolders
 	declare -a WWW_DIRS=('pdf' 'tif' 'kmz' 'log' 'overview' 'zip' 'kml' 'qr');
@@ -207,12 +208,14 @@ case "$2" in
 		echo -e "${PURPLE}generating QR code for overviews ${YELLOW}";
 		pdf_link="http://$IP/flir2qr/${z7_FILENAME}/pdf/${WILDFILE}_merged.pdf"
 		QR_img="${WWW_PATH}/kml/${WILDFILE}_qr.png"
+		QR_file="${WILDFILE}_qr.png"
+		
 	  	qrencode -o $QR_img $pdf_link;
 		PDF_URL='<![CDATA[ <a href='${pdf_link}'> ]]> '${WILDFILE}.PDF' <![CDATA[ </a> ]]>'
 
 	  	#construct tile kmz
 	  	cp -f $FLIR2QR_PATH/kml/template.kml ${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml;
-		  	sed -i 's+QRIMG+'"${QR_img}"'+g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
+		  	sed -i 's+QRIMG+'"${QR_file}"'+g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
 		  	sed -i 's/CENTROID/'"${centroid}"'/g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
 		  	sed -i 's/KMLNAME/'"${WILDFILE} QR code"'/g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
 		  	sed -i 's+FOOTPRINT+'"${footprint}"'+g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
@@ -478,7 +481,6 @@ case "$2" in
 	 	#Setup GUI
 		echo -e "${PURPLE}greating GUI ${YELLOW}";
 	 	cp -r /opt/flir2qr/html/* ${WWW_PATH};
-	 	HTTP_PATH="http://${IP}/flir2qr/${z7_FILENAME}";
 	 	gui="${WWW_PATH}/index.html";
 		sed -i 's=WEBMAPLINK='"${HTTP_PATH}"'\/overview\/map\/=' "$gui";
 		sed -i 's=FEETLINK='"${HTTP_PATH}"'\/kmz\/=' "$gui";

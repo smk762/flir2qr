@@ -190,7 +190,7 @@ case "$2" in
 													mga_labels+=",$SW_mga,$mga_offset_left,$mga_offset_bottom,1";
 													mga_labels+=",$SE_mga,$mga_offset_right,$mga_offset_bottom,1";
 
-		# create footprints
+		# create individual footprint kml
 		echo -e "${PURPLE}Creating footprints${YELLOW}";
 			echo -e "${GREEN}Reducing IR raster colours to make clip fence${YELLOW}";
 				gdal_merge.py -co NBITS=1 -o ${TEMP_PATH}/footprint/${WILDFILE}_extent.tif ${TEMP_PATH}/basemap/${WILDFILE}_ir.tif;
@@ -202,78 +202,26 @@ case "$2" in
 				ogr2ogr -f "KML" ${TEMP_PATH}/footprint/${WILDFILE}_foot_wgs84.kml ${TEMP_PATH}/footprint/${WILDFILE}_fence.shp -overwrite -a_srs EPSG:4326;
 				cp ${TEMP_PATH}/footprint/${WILDFILE}_foot_wgs84.kml ${WWW_PATH}/kml/${WILDFILE}_footprint.kml
 
-		#Isolate footprint KML code
-	  	echo -e "${PURPLE}Isolating footprint KML code ${YELLOW}";
-	  	footprint=$(cat ${TEMP_PATH}/footprint/${WILDFILE}_foot_wgs84.kml | grep LinearRing)
-	  	footprint_coords=$(echo "${footprint}" | sed 's,<Polygon>,,g')
-	  	footprint_coords=$(echo "${footprint_coords}" | sed 's,<outerBoundaryIs>,,g')
-	  	footprint_coords=$(echo "${footprint_coords}" | sed 's,<LinearRing>,,g')
-	  	footprint_coords=$(echo "${footprint_coords}" | sed 's,<coordinates>,,g')
-	  	footprint_coords=$(echo "${footprint_coords}" | sed 's,</coordinates>,,g')
-	  	footprint_coords=$(echo "${footprint_coords}" | sed 's,</LinearRing>,,g')
-	  	footprint_coords=$(echo "${footprint_coords}" | sed 's,</outerBoundaryIs>,,g')
-	  	footprint_coords=$(echo "${footprint_coords}" | sed 's,</Polygon>,,g')
-	  	#footprint_coords=$(echo "${footprint_coords}" | sed 's=,= =g');
-
-		IFS=' ' read -ra coords <<< "$footprint_coords"
-		for i in "${coords[@]}"; do
-			min_x=999
-			min_y=999
-			max_x=-999
-			max_y=-999
-		    x=${i%,*}
-		    y=${i#*,}
-		    if [[ $(echo "$x > $max_x" | bc) -eq 1 ]]; then
-		    	max_x=$x
-		    	xy_1="${x},${y}"
-		    fi
-
-		    if [[ $(echo "$x < $min_x" | bc) -eq 1 ]]; then
-		    	min_x=${x}
-		    	xy_2="${x},${y}"
-		    fi
-		    
-		    if [[ $(echo "$y > $max_y" | bc) -eq 1 ]]; then
-		    	max_y=${y}
-		    	xy_3="${x},${y}"
-		    fi
-
-		    if [[ $(echo "$y < $min_y" | bc) -eq 1 ]]; then
-		    	min_y=${y}
-		    	xy_4="${x},${y}"
-		    fi
-
-		done
-		echo "[ $xy_1 ], [ $xy_2 ], [ $xy_3 ], [ $xy_4 ]"
-
-	  	#echo -e "${GREEN}${footprint_coords}${YELLOW}"
-		footprints+=("$footprint")
-
+	  	footprint=$(cat ${WWW_PATH}/kml/${WILDFILE}_footprint.kml | grep LinearRing)
 		#create QR code
 		echo -e "${PURPLE}generating QR code for overviews ${YELLOW}";
 		pdf_link="http://$IP/flir2qr/${z7_FILENAME}/pdf/${WILDFILE}_merged.pdf"
-		QR_img="${TEMP_PATH}/kml/${WILDFILE}_qr.png"
+		QR_img="${WWW_PATH}/kml/${WILDFILE}_qr.png"
 	  	qrencode -o $QR_img $pdf_link;
 		PDF_URL='<![CDATA[ <a href='${pdf_link}'> ]]> '${WILDFILE}.PDF' <![CDATA[ </a> ]]>'
 
 	  	#construct tile kmz
-	  	cp -f $FLIR2QR_PATH/kml/template.kml ${TEMP_PATH}/kml/${WILDFILE}_qr.kml;
-	  	echo -e "${PURPLE}Creating centroid placemark at $centroid ${YELLOW}";
-		  	sed -i 's+QRIMG+"${QR_img}"+g' "${TEMP_PATH}/kml/${WILDFILE}_qr.kml";
-	  	echo -e "${PURPLE}Creating centroid placemark at $centroid ${YELLOW}";
-		  	sed -i 's/CENTROID/'"${centroid}"'/g' "${TEMP_PATH}/kml/${WILDFILE}_qr.kml";
-	  	echo -e "${PURPLE}Creating centroid placemark at $centroid ${YELLOW}";
-		  	sed -i 's/KMLNAME/'"${WILDFILE} QR code"'/g' "${TEMP_PATH}/kml/${WILDFILE}_qr.kml";
-	  	echo -e "${PURPLE}Creating centroid placemark at $centroid ${YELLOW}";
-		  	sed -i 's+FOOTPRINT+'"${footprint}"'+g' "${TEMP_PATH}/kml/${WILDFILE}_qr.kml";
-	  	echo -e "${PURPLE}Creating centroid placemark at $centroid ${YELLOW}";
-		  	sed -i 's+TILENAME+'"${WILDFILE}"'+g' "${TEMP_PATH}/kml/${WILDFILE}_qr.kml";
-	  	echo -e "${PURPLE}Creating centroid placemark at $centroid ${YELLOW}";
-		  	sed -i 's+PDF_URL+'"${PDF_URL}"'+g' "${TEMP_PATH}/kml/${WILDFILE}_qr.kml";
+	  	cp -f $FLIR2QR_PATH/kml/template.kml ${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml;
+		  	sed -i 's+QRIMG+"${QR_img}"+g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
+		  	sed -i 's/CENTROID/'"${centroid}"'/g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
+		  	sed -i 's/KMLNAME/'"${WILDFILE} QR code"'/g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
+		  	sed -i 's+FOOTPRINT+'"${footprint}"'+g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
+		  	sed -i 's+TILENAME+'"${WILDFILE}"'+g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
+		  	sed -i 's+PDF_URL+'"${PDF_URL}"'+g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
 
-	  	cd ${TEMP_PATH}/kml
-	  	zip ${TEMP_PATH}/kml/${WILDFILE}_qr.zip ${WILDFILE}_qr.kml ${WILDFILE}_qr.png -j;
-		mv -f ${TEMP_PATH}/kml/${WILDFILE}_qr.zip ${WWW_PATH}/kmz/${WILDFILE}_footprint.kmz;			
+	  	cd ${WWW_PATH}/kml
+	  	zip ${WWW_PATH}/kml/${WILDFILE}_foot_qr.zip ${WILDFILE}_footprint_qr.kml ${WILDFILE}_qr.png -j;
+		mv -f ${WWW_PATH}/kml/${WILDFILE}_foot_qr.zip ${WWW_PATH}/kmz/${WILDFILE}_foot_qr.kmz;			
 
 		# merge
 			echo -e "${PURPLE}Merging rasters ${YELLOW}";

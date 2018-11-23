@@ -481,6 +481,8 @@ case "$2" in
 	 	HTTP_PATH="http://${IP}/flir2qr/${z7_FILENAME}";
 	 	gui="${WWW_PATH}/index.html";
 		sed -i 's=WEBMAPLINK='"${HTTP_PATH}"'\/overview\/map\/=' "$gui";
+		sed -i 's=FEETLINK='"${HTTP_PATH}"'\/kmz\/=' "$gui";
+		sed -i 's=TILELINK='"${HTTP_PATH}"'\/pdf\/=' "$gui";
 		sed -i 's=PDFLINK='"${HTTP_PATH}"'\/overview\/overview.pdf=' "$gui";
 		sed -i 's=TIFLINK='"${HTTP_PATH}"'\/overview\/${z7_FILENAME}_overview.tif=' "$gui";
 		sed -i 's=KMZLINK='"${HTTP_PATH}"'\/overview\/overview.kmz=' "$gui";

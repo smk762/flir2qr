@@ -212,7 +212,7 @@ case "$2" in
 
 	  	#construct tile kmz
 	  	cp -f $FLIR2QR_PATH/kml/template.kml ${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml;
-		  	sed -i 's+QRIMG+"${QR_img}"+g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
+		  	sed -i 's+QRIMG+'"${QR_img}"'+g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
 		  	sed -i 's/CENTROID/'"${centroid}"'/g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
 		  	sed -i 's/KMLNAME/'"${WILDFILE} QR code"'/g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
 		  	sed -i 's+FOOTPRINT+'"${footprint}"'+g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";

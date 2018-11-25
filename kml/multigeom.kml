@@ -1,0 +1,35 @@
+  
+	<Placemark>
+			<Point>
+				<IconStyle>
+					<color>c4eaffff</color>
+					<scale>3</scale>
+					<Icon>
+						<href>QRIMG_VAR</href>
+					</Icon>
+					<hotSpot x="1" y="1" xunits="fraction" yunits="fraction"/>
+				</IconStyle>
+				<coordinates>
+					CENTROID_VAR
+				</coordinates>
+			</Point>
+
+  </Placemark>
+	<Placemark>
+		<name>TILE TILE_VAR</name>
+			<Style>
+				<LineStyle>
+					<width>3</width>
+					<color>ffdd00ff</color>
+				</LineStyle>
+				<PolyStyle>
+					<fill>0</fill>
+				</PolyStyle>
+			</Style>
+			<ExtendedData><SchemaData schemaUrl="#merge">
+				<SimpleData name="Tile">CDATA_VAR</SimpleData>
+			</SchemaData></ExtendedData>
+
+		      	COORDS_VAR
+
+  </Placemark>

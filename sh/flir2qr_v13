@@ -16,10 +16,10 @@ echo -e "Checking for 7z archive";
 case "$2" in
 *.7z)
 	timestamp=$(date +%F_%T);
-	#IP="$(echo -e $(hostname -I) | tr -d '[:space:]')";
-	IP="static.dbca.wa.gov.au"
-	MAPWIDTH=2000
-	MAPHEIGHT=1600
+	IP="$(echo -e $(hostname -I) | tr -d '[:space:]')";
+	#IP="static.dbca.wa.gov.au"
+	MAPWIDTH=1600
+	MAPHEIGHT=1200
 	MAPSIZE="$MAPWIDTH $MAPHEIGHT";
 	PIXELRANGE="0 8000";
 	startTime=$SECONDS;
@@ -83,12 +83,13 @@ case "$2" in
 			gdalbuildvrt ${TEMP_PATH}/vrt/${WILDFILE}_hs.vrt ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif;
 	done
 
-
+	i=0
 	for filename in ${TEMP_PATH}/ir/*.png; do
 		procTime=$SECONDS;
 		fname=$(basename "$filename");
 		WILDFILE=${fname%.*};
 		echo -e "${PURPLE}Processing ir $fname ($i/$num_tiles) ${YELLOW}";
+		((i++))
 
 		# prepare ir imagery
 		echo -e "${GREEN}Stamping IR png CRS${YELLOW}";
@@ -258,7 +259,7 @@ case "$2" in
 		lry=$(echo ${lr[1]});
 
 		# buffer extent (m)
-		buffer=2000;
+		buffer=500;
 		ulx=$(echo $ulx-$buffer|bc);
 		uly=$(echo $uly+$buffer|bc);
 		lrx=$(echo $lrx+$buffer|bc);
@@ -284,7 +285,7 @@ case "$2" in
 		mv -f ${TEMP_PATH}/kml/${z7_FILENAME}_qr.zip ${WWW_PATH}/kmz/${z7_FILENAME}_qr.kmz;		
 
 		#gdalwarp -dstalpha -te $ulx $lry $lrx $uly -co COMPRESS=DEFLATE -overwrite -ts $MAPSIZE -ot Byte ${FLIR2QR_PATH}/base/merge3.tif ${TEMP_PATH}/overview/COG_base.tif
-		gdalwarp -dstalpha -te $ulx $lry $lrx $uly -co COMPRESS=DEFLATE -overwrite -ts $MAPSIZE -ot Byte ${FLIR2QR_PATH}/base/2131_ops.tif ${TEMP_PATH}/overview/COG_base.tif
+		gdalwarp -dstalpha -te $ulx $lry $lrx $uly -co COMPRESS=DEFLATE -overwrite -ts $MAPSIZE -ot Byte ${FLIR2QR_PATH}/base/2031_ops.tif ${TEMP_PATH}/overview/COG_base.tif
 		
 		echo -e "${PURPLE}Creating TIF overview ${YELLOW}";
 		gdal_merge.py -o ${TEMP_PATH}/overview/overview_z50.tif ${TEMP_PATH}/overview/COG_base.tif ${TEMP_PATH}/overview/hs_merged_z50.tif -co COMPRESS=DEFLATE -co tiled=yes;
@@ -293,12 +294,14 @@ case "$2" in
 																# Get Overview dimensions
 																echo -e "${PURPLE}Get Overview dimensions ${YELLOW}";
 																ov_Dim=($(gdalinfo ${WWW_PATH}/overview/${z7_FILENAME}_overview.tif | grep Size | sed 's/,/ /' | sed 's/Size is //'));
-																#MAPWIDTH=$(echo ${ov_Dim[0]})
-																#MAPHEIGHT=$(echo ${ov_Dim[1]})
-																MAPWIDTH=5000;
-																MAPHEIGHT=4000;
+																MAPWIDTH=$(echo ${ov_Dim[0]})
+																MAPHEIGHT=$(echo ${ov_Dim[1]})
+																#MAPWIDTH=5000;
+																#MAPHEIGHT=4000;
 																MAPSIZE="$MAPWIDTH $MAPHEIGHT";
-
+																echo "map dims"
+																echo $MAPHEIGHT
+																echo $MAPWIDTH
 																# Create CRS Labels and Title
 																echo -e "${PURPLE} create CRS and title labels ${YELLOW}";
 																WGS_label="WGS84";
@@ -419,15 +422,14 @@ case "$2" in
 		sed -i 's,http://openlayers.org/api/2.12/OpenLayers.js,/flir2qr/js/ol.js,g' "$slippy";
         sed -i 's,http://www.openlayers.org/api/2.12/OpenLayers.js,/flir2qr/js/ol.js,g' "$slippy";
         sed -i 's,</title>,</title><link rel="stylesheet" href="/flir2qr/css/style.css" />,g' "$slippy";
-		sed -i 's,</title>,</title><script src="//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js" />,g' "$slippy";
-
+		sed -i 's,</title>,</title><script src="//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js"></script>,g' "$slippy";
 
 		echo -e "${PURPLE}Creating footprints in overview";
 		sed -i 's=map.addLayers([bhyb, broad, baer, tmsoverlay]);=map.addLayers([bhyb, broad, baer, tmsoverlay])\'$'\nKML_VAR;=g' "$slippy";
 
 		echo -e "${PURPLE}Creating footprints in overview";
 	for kml in ${WWW_PATH}/kml/*_footprint.kml; do
-		sed -i 's=KML_VAR=\omnivore.kml("${kml}").addTo(map);'$'\nKML_VAR=g' "$slippy";
+		sed -i 's=KML_VAR=\omnivore.kml("${kml}").addTo(map); KML_VAR=g' "$slippy";
 		echo $kml
 	done
 		sed -i 's=KML_VAR==g' "$slippy";
@@ -485,10 +487,10 @@ case "$2" in
 		sed -i 's=WEBMAPLINK='"${HTTP_PATH}"'\/overview\/map\/=' "$gui";
 		sed -i 's=FEETLINK='"${HTTP_PATH}"'\/kmz\/=' "$gui";
 		sed -i 's=TILELINK='"${HTTP_PATH}"'\/pdf\/=' "$gui";
-		sed -i 's=PDFLINK='"${HTTP_PATH}"'\/overview\/overview.pdf=' "$gui";
+		sed -i 's=PDFLINK='"${HTTP_PATH}"'\/overview\/${z7_FILENAME}_overview.pdf=' "$gui";
 		sed -i 's=TIFLINK='"${HTTP_PATH}"'\/overview\/${z7_FILENAME}_overview.tif=' "$gui";
-		sed -i 's=KMZLINK='"${HTTP_PATH}"'\/overview\/overview.kmz=' "$gui";
-		sed -i 's=QRKML='"${HTTP_PATH}"'\/overview\/'"${z7_FILENAME}"'_qr.kmz=' "$gui"
+		sed -i 's=KMZLINK='"${HTTP_PATH}"'\/overview\/${z7_FILENAME}_overview.kmz=' "$gui";
+		sed -i 's=QRKML='"${HTTP_PATH}"'\/overview\/${z7_FILENAME}_qr.kmz=' "$gui"
 		echo "GUI updated";
 		runTime=$(echo $endTime/60-$startTime/60|bc)
 		echo "Script completed in $runTime minutes";

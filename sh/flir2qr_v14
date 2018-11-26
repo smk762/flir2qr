@@ -239,23 +239,12 @@ case "$2" in
 			sed -i 's+CENTROID_VAR+'"${centroid}"'+g' "$multigeom_kml";
 			sed -i 's+CDATA_VAR+'"${CDATA_VAR}"'+g' "$multigeom_kml";
 			sed -i 's+COORDS_VAR+'"${COORDS_VAR}"'+g' "$multigeom_kml";
-			echo "thot";
-			echo "hot";
-			cat "$multigeom_kml";
 
 			echo -e "${PURPLE}"
 			cp /opt/flir2qr/kml/foot.kml ${WWW_PATH}/kml/${WILDFILE}_foot.kml
 			multi_kml=$(cat /opt/flir2qr/kml/temp.kml | tr '\n' "\\\n")
-			echo "$multi_kml";
-			echo "gvot";
 			sed -i -e 's+MULTIGEOM_VAR+'"${multi_kml}"'+g' "${WWW_PATH}/kml/${WILDFILE}_foot.kml";
-			echo "got";
-
 			sed -i -e 's+MULTIGEOM_VAR+'"${multi_kml}"' MULTIGEOM_VAR+g' "${WWW_PATH}/kml/merged_foot.kml";
-			echo "shot";
-
-			#cat "${WWW_PATH}/kml/${WILDFILE}_foot.kml";
-			#cat "${WWW_PATH}/kml/merged_foot.kml";
 
 			#create QR code
 			echo -e "${PURPLE}generating QR code for overviews ${YELLOW}";

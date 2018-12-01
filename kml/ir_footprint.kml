@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+	<name>TILENUM_VAR</name>
+	<open>1</open>
+	<Style id="footprint">
+		<LabelStyle>
+			<color>50D2783C</color>
+		</LabelStyle>
+		<BalloonStyle><bgColor>00000000</bgColor></BalloonStyle>
+		<LineStyle>
+			<color>99f00fff</color>
+			<width>3</width>
+		</LineStyle>
+		<PolyStyle>
+			<color>007f0eff</color>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="footprint_hover">
+		<LabelStyle>
+			<color>50D2783C</color>
+		</LabelStyle>
+		<BalloonStyle><bgColor>00000000</bgColor></BalloonStyle>
+		<LineStyle>
+			<color>FFD2783C</color>
+			<width>6</width>
+		</LineStyle>
+		<PolyStyle>
+			<color>50D2783C</color>
+			<fill>1</fill>
+		</PolyStyle>
+	</Style>
+	<StyleMap id="footprint_styles">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#footprint</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#footprint_hover</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Placemark>
+		<styleUrl>#footprint_styles</styleUrl>
+		<name>Tile TILENUM_VAR</name>
+		<description><![CDATA[ <a href=MISSION_URL_VAR/pdf/TILENUM_VAR_merged.pdf> <img src="TILENUM_VAR_qr.png" /><br />]]> Link to IR Tile <![CDATA[ </a> ]]></description>
+		FOOTPRINT_VAR
+	</Placemark>
+</Document>
+</kml>

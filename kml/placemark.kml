@@ -1,0 +1,6 @@
+	<Placemark>
+		<styleUrl>#footprint_styles</styleUrl>
+		<name>Tile TILENUM_VAR</name>
+		<description><![CDATA[ <a href=MISSION_URL_VAR/pdf/TILENUM_VAR_merged.pdf> <img src="TILENUM_VAR_qr.png" /><br />]]> Link to IR Tile <![CDATA[ </a> ]]></description>
+		FOOTPRINT_VAR
+	</Placemark>

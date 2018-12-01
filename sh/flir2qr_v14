@@ -18,16 +18,17 @@ case "$2" in
 	timestamp=$(date +%F_%T);
 	IP="$(echo -e $(hostname -I) | tr -d '[:space:]')";
 	#IP="static.dbca.wa.gov.au"
-	MAPWIDTH=1600
-	MAPHEIGHT=1200
+	MAPWIDTH=1600;
+	MAPHEIGHT=1200;
 	MAPSIZE="$MAPWIDTH $MAPHEIGHT";
 	PIXELRANGE="0 8000";
 	startTime=$SECONDS;
 
 	# Set script install path
-	z7_FILENAME="${2%.*}";
+	ZIP_FILENAME="${2%.*}";
 	FLIR2QR_PATH="/opt/flir2qr";
-	HTTP_PATH="http://${IP}/flir2qr/${z7_FILENAME}";
+	HTTP_PATH="http://${IP}/flir2qr/${ZIP_FILENAME}";
+	cp /opt/flir2qr/html/css /var/www/html/flir2qr -r;
 
 	# define processing and output subfolders
 	declare -a WWW_DIRS=('pdf' 'tif' 'kmz' 'log' 'overview' 'zip' 'kml' 'qr' 'footprint' 'shp');
@@ -35,16 +36,16 @@ case "$2" in
 
 	# Define legend and logo images
 	LOGO="$FLIR2QR_PATH/img/logo.gif";
-	LEGEND="$FLIR2QR_PATH/img/legend.jpg";
+	LEGEND="$FLIR2QR_PATH/img/legend2.jpg";
 
 	# Create www folders for display
-	WWW_PATH="/var/www/html/flir2qr/${z7_FILENAME}";
+	WWW_PATH="/var/www/html/flir2qr/${ZIP_FILENAME}";
 	rm -Rf ${WWW_PATH};
 	mkdir -p ${WWW_PATH};
 	for dir in "${WWW_DIRS[@]}"; do  mkdir -p ${WWW_PATH}/$dir; done
 
 	# Create temp folders for processing
-	TEMP_PATH=$FLIR2QR_PATH/temp/${z7_FILENAME};	
+	TEMP_PATH=$FLIR2QR_PATH/temp/${ZIP_FILENAME};	
 	rm -Rf ${TEMP_PATH};
 	mkdir -p ${TEMP_PATH};
 		echo -e "${PURPLE}Creating temporary folders in ${TEMP_PATH}";
@@ -58,242 +59,288 @@ case "$2" in
 	fi
 	# unzip incoming data
 	echo -e "Extracting archive";
-	cp $1/$2 /var/www/html/flir2qr/zip/$2
-	7z x $1/$2 -o${TEMP_PATH}/zip
+	cp $1/$2 /var/www/html/flir2qr/zip/$2;
+	7z x $1/$2 -o${TEMP_PATH}/zip;
 	echo -e "${GREEN}Copying Hotspots${YELLOW}";
-	mv ${TEMP_PATH}/zip/${z7_FILENAME}/HotSpots/*  ${TEMP_PATH}/hotspot;
+	mv ${TEMP_PATH}/zip/${ZIP_FILENAME}/HotSpots/*  ${TEMP_PATH}/hotspot;
 	echo -e "${GREEN}Copying IR${YELLOW}";
-	mv ${TEMP_PATH}/zip/${z7_FILENAME}/PNGs/*  ${TEMP_PATH}/ir;
+	mv ${TEMP_PATH}/zip/${ZIP_FILENAME}/PNGs/*  ${TEMP_PATH}/ir;
 	num_tiles=$(ls -l ${TEMP_PATH}/hotspot/*.png | wc -l);
+	mv "${TEMP_PATH}/zip/${ZIP_FILENAME}/KML Boundaries/mission1_ploy.kml" "$WWW_PATH/kml/hotspots.kml"
 
-	i=0
-	cp /opt/flir2qr/kml/foot.kml ${WWW_PATH}/kml/merged_foot.kml
+	mission_footprints=$WWW_PATH/kml/$ZIP_FILENAME.kml;
+
+	#cp $FLIR2QR_PATH/kml/mission_footprints.kml $mission_footprints;
+
+	i=0;
+	j=0;
 	for filename in ${TEMP_PATH}/hotspot/*.png; do
 		((i++))
 		procTime=$SECONDS;
 		fname=$(basename "$filename");
 		WILDFILE=${fname%.*};
-		echo -e "${PURPLE}Processing hotspot $fname ($i/$num_tiles) ${YELLOW}";
-		hs_Dim=($(gdalinfo ${TEMP_PATH}/hotspot/${WILDFILE}.png | grep Size | sed 's/,/ /' | sed 's/Size is //'));
-		MAPWIDTH=$(echo ${hs_Dim[0]})
-		MAPHEIGHT=$(echo ${hs_Dim[1]})
-		MAPSIZE="$MAPWIDTH $MAPHEIGHT";
-		echo "map dims"
-		echo $MAPHEIGHT
-		echo $MAPWIDTH
-																
-		# prepare hotspots
-		echo -e "${GREEN} Set Hotspot coords to MGA zone 50 ${YELLOW}";
-			gdal_translate -a_srs EPSG:28350 ${TEMP_PATH}/hotspot/${WILDFILE}.png ${TEMP_PATH}/mga_50/${WILDFILE}_hs.tif -co COMPRESS=DEFLATE -b 1 -a_nodata 0 -of GTiff;
-		echo -e "${GREEN} Coloring HS raster wgs84$ {YELLOW}";
-			gdaldem color-relief ${TEMP_PATH}/mga_50/${WILDFILE}_hs.tif ${FLIR2QR_PATH}/color_table.txt ${TEMP_PATH}/mga_50/${WILDFILE}_hs_z50.tif -alpha -exact_color_entry;
-		echo -e "${GREEN} Deproject hotspot to wgs84 ${YELLOW}";
-			gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 ${TEMP_PATH}/mga_50/${WILDFILE}_hs_z50.tif ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif -co COMPRESS=DEFLATE -overwrite -ot Byte;
-			#-ts $MAPSIZE 
-		echo -e "${GREEN}Creating VRTs ${YELLOW}";
-			gdalbuildvrt ${TEMP_PATH}/vrt/${WILDFILE}_hs.vrt ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif;
+		hs_src="${TEMP_PATH}/hotspot/${WILDFILE}.png"
+		hs_z50="${TEMP_PATH}/mga_50/${WILDFILE}_hs.tif"
+		hs_z50_alpha="${TEMP_PATH}/mga_50/${WILDFILE}_hs_z50.tif"
+		hs_base="${TEMP_PATH}/basemap/${WILDFILE}_hs.tif"
+		hs_vrt="${TEMP_PATH}/vrt/${WILDFILE}_hs.vrt"
+		echo -e "${GREEN}Scanning for hotspots ${YELLOW}";
+		gdal_translate -a_srs EPSG:28350 $hs_src $hs_z50 -co COMPRESS=DEFLATE -b 1 -a_nodata 0 -of GTiff;
+		gdaldem color-relief $hs_z50 ${FLIR2QR_PATH}/color_table.txt $hs_z50_alpha -alpha -exact_color_entry;
+		hs_filter=($(gdalinfo $hs_z50_alpha -stats | grep STATISTICS_STDDEV | sed 's,STATISTICS_STDDEV=,,'))
 
- 			hs_filter=($(gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif -stats | grep STATISTICS_STDDEV | sed 's,STATISTICS_STDDEV=,,'))
- 			echo ${hs_filter[0]}
- 			echo ${hs_filter[1]}
- 			echo ${hs_filter[2]}
- 			echo ${hs_filter[3]}
-
+		# prepare hotspots (if detected)
  		if [[ ${hs_filter[3]} > 0 ]]; then
-			echo -e "${PURPLE}Processing ir $fname ($i/$num_tiles) ${YELLOW}";
-			ir_Dim=($(gdalinfo ${TEMP_PATH}/ir/${WILDFILE}.png | grep Size | sed 's/,/ /' | sed 's/Size is //'));
-			MAPWIDTH=$(echo ${ir_Dim[0]})
-			MAPHEIGHT=$(echo ${ir_Dim[1]})
+			tile_placemark=$WWW_PATH/kml/${WILDFILE}_place.kml;
+			cp $FLIR2QR_PATH/kml/placemark.kml $tile_placemark;
+			echo -e "${GREEN}Hotspot detected ${YELLOW}";
+			echo -e "${PURPLE}Processing tile $fname ($i/$num_tiles | filtered: $j) ${YELLOW}";
+			gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 $hs_z50_alpha $hs_base -co COMPRESS=DEFLATE -overwrite -ot Byte;
+			echo -e "${GREEN}Buiding hotspot vrt ${YELLOW}";
+			gdalbuildvrt $hs_vrt $hs_base;
+			#prepare IR base
+			((j++))										
+			ir_src="${TEMP_PATH}/ir/${WILDFILE}.png"
+			ir_z50="${TEMP_PATH}/mga_50/${WILDFILE}_ir_z50.tif"
+			ir_base="${TEMP_PATH}/basemap/${WILDFILE}_ir.tif"
+			ir_vrt="${TEMP_PATH}/vrt/${WILDFILE}_ir.vrt"
+			ir_wgs="${TEMP_PATH}/wgs84/${WILDFILE}_ir_wgs84.tif"
+			merged_tif="${WWW_PATH}/tif/${WILDFILE}_merged.tif"
+			echo -e "${GREEN}Getting IR dimensions ${YELLOW}";
+			ir_Dim=($(gdalinfo $ir_src | grep Size | sed 's/,/ /' | sed 's/Size is //'));					
+			MAPWIDTH=$(echo ${hs_Dim[0]});
+			MAPHEIGHT=$(echo ${hs_Dim[1]});
 			MAPSIZE="$MAPWIDTH $MAPHEIGHT";
-			echo "map dims"
-			echo $MAPHEIGHT
-			echo $MAPWIDTH
-			# prepare ir imagery
-			echo -e "${GREEN}Stamping IR png CRS${YELLOW}";
-				gdal_translate -a_srs EPSG:28350 ${TEMP_PATH}/ir/${WILDFILE}.png ${TEMP_PATH}/mga_50/${WILDFILE}_ir_z50.tif -co COMPRESS=DEFLATE -b 1 -b 1 -b 1 -b mask -a_nodata 0 -of GTiff;
-				gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha ${TEMP_PATH}/mga_50/${WILDFILE}_ir_z50.tif;
-			echo -e "${GREEN}Convert IR raster wgs84${YELLOW}";
-				gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 ${TEMP_PATH}/mga_50/${WILDFILE}_ir_z50.tif ${TEMP_PATH}/wgs84/${WILDFILE}_ir_wgs84.tif -co COMPRESS=DEFLATE -overwrite -ts $MAPSIZE -ot Byte;
-			echo -e "${GREEN}Scaling IR tif ${TEMP_PATH}/basemap/${WILDFILE}_ir_wgs84.tif ${YELLOW}";
-				gdal_translate -a_srs EPSG:4326 ${TEMP_PATH}/wgs84/${WILDFILE}_ir_wgs84.tif ${TEMP_PATH}/basemap/${WILDFILE}_ir.tif -scale 0 255 -co COMPRESS=DEFLATE -a_nodata 0 -of GTiff -ot Byte;
+			echo "${WILDFILE} HS dims: $MAPSIZE";
+
+			echo -e "${GREEN}Stamping IR tile CRS${YELLOW}";
+			gdal_translate -a_srs EPSG:28350 $ir_src $ir_z50 -co COMPRESS=DEFLATE -b 1 -b 1 -b 1 -b mask -a_nodata 0 -of GTiff;
+			echo -e "${GREEN}Converting IR tile to RGBA colorspace CRS${YELLOW}";
+			gdal_edit.py -colorinterp_1 red -colorinterp_2 green -colorinterp_3 blue -colorinterp_4 alpha $ir_z50;
+			echo -e "${GREEN}Convert IR tile to wgs84${YELLOW}";
+			gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 $ir_z50 $ir_wgs -co COMPRESS=DEFLATE -overwrite -ts $MAPSIZE -ot Byte;
+			echo -e "${GREEN}Scaling IR tile colors to 255 ${YELLOW}";
+			gdal_translate -a_srs EPSG:4326 $ir_wgs $ir_base -scale 0 255 -co COMPRESS=DEFLATE -a_nodata 0 -of GTiff -ot Byte;
 			echo -e "${GREEN}Creating VRTs ${YELLOW}";
-				gdalbuildvrt ${TEMP_PATH}/vrt/${WILDFILE}_ir.vrt ${TEMP_PATH}/basemap/${WILDFILE}_ir.tif;
+			gdalbuildvrt $ir_vrt $ir_base;
 
-														# Create CRS Labels
-														WGS_label="WGS84";
-														MGA_label="MGA Zone 50";
-														convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 10 -gravity South label:"${MGA_label}" png32:${TEMP_PATH}/label/mga_label.png;
-														convert -background white -fill green -font "DejaVu-Sans" -pointsize 10 -gravity South label:"${WGS_label}" png32:${TEMP_PATH}/label/wgs84_label.png;
-														mga_img="${TEMP_PATH}/label/mga_label.png";
-														wgs_img="${TEMP_PATH}/label/wgs84_label.png";
 
-														# Calculate label offsets
-														wgs_Dim=($(gdalinfo $wgs_img | grep Size | sed 's/,//' | sed 's/Size is //'));
-														wgs_width=$(echo ${wgs_Dim[0]});
-														wgs_height=$(echo ${wgs_Dim[1]});
+			echo -e "${PURPLE}Merging rasters ${YELLOW}";
+				gdal_merge.py -o $merged_tif $ir_vrt $hs_vrt -co COMPRESS=DEFLATE -co tiled=yes;
+				echo -e "${GREEN}Getting IR tile pixel size ${YELLOW}";
+				gdalinfo $merged_tif | grep Pixel
+			  	pixel_size=$(echo $(gdalinfo $merged_tif | grep Pixel |  sed 's,Pixel Size = ,,' | sed 's/[()]//g'));
+			  	ps=($(echo $pixel_size |sed 's/,/ /'));
+			  	echo $ps
+				ps_x=$(echo ${ps[0]});
+				ps_y=$(echo ${ps[1]});
+				echo $ps_x;
+				echo $ps_y;
+				wgs_tile="$merged_tif"
+				mga_tile="$ir_z50"
 
-														mga_Dim=($(gdalinfo $mga_img | grep Size | sed 's/,//' | sed 's/Size is //'));
-														mga_width=$(echo ${mga_Dim[0]});
-														mga_height=$(echo ${mga_Dim[1]});
+				echo -e "${GREEN}Getting IR tile dimensions ${YELLOW}";
+				wgs_lbl_dims=($(gdalinfo $wgs_tile | grep Size | sed 's/,/ /' | sed 's/Size is //'));
+				MAPWIDTH=$(echo ${wgs_lbl_dims[0]})
+				MAPHEIGHT=$(echo ${wgs_lbl_dims[1]})
+				MAPSIZE="$MAPWIDTH $MAPHEIGHT";
+				echo "${WILDFILE} IR dims: $MAPSIZE";
 
-														mga_offset_bottom=$(echo $mga_height+wgs_height+5|bc);
-														mga_offset_top=$(echo $MAPHEIGHT-$mga_height-$wgs_height|bc);
-														mga_offset_left=5;
-														mga_offset_h_center=$(printf "%.0f" $(echo $MAPWIDTH/2-$mga_width/2|bc));
-														mga_offset_right=$(echo $MAPWIDTH-$mga_width*2|bc);
-														wgs_offset_bottom=5;
-														wgs_offset_top=$(echo $MAPHEIGHT-$wgs_height|bc);
-														wgs_offset_left=5;
-														wgs_offset_h_center=$(printf "%.0f" $(echo $MAPWIDTH/2-$wgs_width/2|bc));
-														wgs_offset_right=$(echo $MAPWIDTH-$wgs_width*4|bc);
+					# Get Tile corner coords 
+				  	NW_wgs_tile=$(gdalinfo $wgs_tile | grep 'Upper Left' |  grep -o '(.*).' | sed 's/[()]//g');
+				  	NE_wgs_tile=$(gdalinfo $wgs_tile | grep 'Upper Right' |  grep -o '(.*).' | sed 's/[()]//g');
+				  	SW_wgs_tile=$(gdalinfo $wgs_tile | grep 'Lower Left' |  grep -o '(.*).' | sed 's/[()]//g');
+				  	SE_wgs_tile=$(gdalinfo $wgs_tile | grep 'Lower Right' |  grep -o '(.*).' | sed 's/[()]//g');
+				  	centroid=$(gdalinfo $wgs_tile | grep Center |  grep -o '(.*).' | sed 's/[()]//g');
+				  	
+					# Define bounding box
+					ul=($(echo $NW_wgs_tile | sed 's/,//'));
+					ulx=$(echo ${ul[0]});
+					uly=$(echo ${ul[1]});
+					lr=($(echo $SE_wgs_tile | sed 's/,//'));
+					lrx=$(echo ${lr[0]});
+					lry=$(echo ${lr[1]});
 
-														CRS_labels="$mga_img,$mga_offset_h_center,$mga_offset_bottom,1";
-														CRS_labels+=",$wgs_img,$wgs_offset_h_center,$wgs_offset_bottom,1";
+					# Get MGA corner coords - Only Zone 50 at the moment
+				  	NW_mga_tile=$(gdalinfo $mga_tile | grep 'Upper Left' |  grep -o '(.*).' | sed 's/[()]//g');
+				  	NE_mga_tile=$(gdalinfo $mga_tile | grep 'Upper Right' |  grep -o '(.*).' | sed 's/[()]//g');
+				  	SW_mga_tile=$(gdalinfo $mga_tile | grep 'Lower Left' |  grep -o '(.*).' | sed 's/[()]//g');
+				  	SE_mga_tile=$(gdalinfo $mga_tile | grep 'Lower Right' |  grep -o '(.*).' | sed 's/[()]//g');
 
-														# Create Map Title
-														convert -background none -fill CornflowerBlue -font "DejaVu-Sans" -pointsize 18 -gravity North label:"${z7_FILENAME}" png32:${TEMP_PATH}/label/${z7_FILENAME}_title.png;
-														tile_img="${TEMP_PATH}/label/${z7_FILENAME}_title.png";
-														title_Dim=($(gdalinfo ${TEMP_PATH}/label/${z7_FILENAME}_title.png | grep Size | sed 's/,//' | sed 's/Size is //'));
-														title_width=$(echo ${title_Dim[0]})
-														title_height=$(echo ${title_Dim[1]})
-														title_x=$(printf "%.0f" $(echo $MAPWIDTH/2-$title_width/2|bc));
-														title_y=$(echo $MAPHEIGHT-$title_height-10|bc);
-														title_label=",$tile_img,$title_x,$title_y,1";
+				  	echo "WGS84"
+					# Create WGS84 Key label
+					wgs_lbl_img="${TEMP_PATH}/label/wgs84_label.png";
+					convert -background white -fill green -font "DejaVu-Sans" -pointsize 10 -gravity South label:"WGS84" png32:${wgs_lbl_img};
+					wgs_lbl_dim=($(gdalinfo $wgs_lbl_img | grep Size | sed 's/,/ /' | sed 's/Size is //'));
+					wgs_width=$(echo ${wgs_lbl_dim[0]});
+					wgs_height=$(echo ${wgs_lbl_dim[1]});
+					wgs_offset_top=$(echo $MAPHEIGHT-$wgs_height | bc);
+					wgs_offset_bottom=5;
+					wgs_offset_left=5;
+					wgs_offset_right=$(echo $MAPWIDTH-$wgs_width | bc);
+					wgs_offset_h_center=$(printf "%.0f" $(echo $MAPWIDTH/2-$wgs_width/2|bc));
+					wgs_lbl="$wgs_lbl_img,$wgs_offset_h_center,$wgs_offset_bottom,1";
+					echo $wgs_lbl;
 
-														# Get WGS84 corner coords 
-													  	NW=$(echo $(gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif | grep 'Upper Left' |  grep -o '(.*).' | sed 's/[()]//g'));
-													  	NE=$(echo $(gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif | grep 'Upper Right' |  grep -o '(.*).' | sed 's/[()]//g'));
-													  	SW=$(echo $(gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif | grep 'Lower Left' |  grep -o '(.*).' | sed 's/[()]//g'));
-													  	SE=$(echo $(gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif | grep 'Lower Right' |  grep -o '(.*).' | sed 's/[()]//g'));
-													  	centroid=$(echo $(gdalinfo ${TEMP_PATH}/basemap/${WILDFILE}_hs.tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
-													  	
-													  	# Create WGS labels
-														convert -background white -fill green -font "DejaVu-Sans" -pointsize 10 -gravity NorthWest label:"${NW}" png32:${TEMP_PATH}/label/${WILDFILE}_NW_wgs.png;
-														convert -background white -fill green -font "DejaVu-Sans" -pointsize 10 -gravity NorthEast label:"${NE}" png32:${TEMP_PATH}/label/${WILDFILE}_NE_wgs.png;
-														convert -background white -fill green -font "DejaVu-Sans" -pointsize 10 -gravity SouthWest label:"${SW}" png32:${TEMP_PATH}/label/${WILDFILE}_SW_wgs.png;
-														convert -background white -fill green -font "DejaVu-Sans" -pointsize 10 -gravity SouthEast label:"${SE}" png32:${TEMP_PATH}/label/${WILDFILE}_SE_wgs.png;
-														NW_wgs="${TEMP_PATH}/label/${WILDFILE}_NW_wgs.png";
-														NE_wgs="${TEMP_PATH}/label/${WILDFILE}_NE_wgs.png";
-														SW_wgs="${TEMP_PATH}/label/${WILDFILE}_SW_wgs.png";
-														SE_wgs="${TEMP_PATH}/label/${WILDFILE}_SE_wgs.png";
-														wgs_labels="$NW_wgs,$wgs_offset_left,$wgs_offset_top,1";
-														wgs_labels+=",$NE_wgs,$wgs_offset_right,$wgs_offset_top,1";
-														wgs_labels+=",$SW_wgs,$wgs_offset_left,$wgs_offset_bottom,1";
-														wgs_labels+=",$SE_wgs,$wgs_offset_right,$wgs_offset_bottom,1";
+				  	echo "MGA50"
+					# Create MGA50 Key Label
+					mga_lbl_img="${TEMP_PATH}/label/mga_label.png";
+					convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 10 -gravity South label:"MGA Zone 50" png32:${mga_lbl_img};
+					mga_lbl_dim=($(gdalinfo $mga_lbl_img | grep Size | sed 's/,//' | sed 's/Size is //'));
+					mga_width=$(echo ${mga_lbl_dim[0]});
+					mga_height=$(echo ${mga_lbl_dim[1]});
+					mga_offset_top=$(echo $MAPHEIGHT-$mga_height-$wgs_height|bc);
+					mga_offset_bottom=$(echo $mga_height+wgs_height+5|bc);
+					mga_offset_left=5;
+					mga_offset_right=$(echo $MAPWIDTH-$mga_width*2|bc);
+					mga_offset_h_center=$(printf "%.0f" $(echo $MAPWIDTH/2-$mga_width/2|bc));
+					mga_lbl="$mga_lbl_img,$mga_offset_h_center,$mga_offset_bottom,1";
+					echo $mga_lbl;
 
-														# Define bounding box
-														ul=($(echo $NW|sed 's/,//'));
-														ulx=$(echo ${ul[0]});
-														uly=$(echo ${ul[1]});
-														lr=($(echo $SE|sed 's/,//'));
-														lrx=$(echo ${lr[0]});
-														lry=$(echo ${lr[1]});
+				  	echo "WGS"
+				  	# Create WGS labels
+					NW_wgs_img="${TEMP_PATH}/label/${WILDFILE}_NW_wgs.png";
+					NE_wgs_img="${TEMP_PATH}/label/${WILDFILE}_NE_wgs.png";
+					SW_wgs_img="${TEMP_PATH}/label/${WILDFILE}_SW_wgs.png";
+					SE_wgs_img="${TEMP_PATH}/label/${WILDFILE}_SE_wgs.png";
+					convert -background white -fill green -font "DejaVu-Sans" -pointsize 10 -gravity NorthWest label:"${NW_wgs_tile}" png32:${NW_wgs_img};
+					convert -background white -fill green -font "DejaVu-Sans" -pointsize 10 -gravity NorthEast label:"${NE_wgs_tile}" png32:${NE_wgs_img};
+					convert -background white -fill green -font "DejaVu-Sans" -pointsize 10 -gravity SouthWest label:"${SW_wgs_tile}" png32:${SW_wgs_img};
+					convert -background white -fill green -font "DejaVu-Sans" -pointsize 10 -gravity SouthEast label:"${SE_wgs_tile}" png32:${SE_wgs_img};
+					wgs_lbl_dim=($(gdalinfo $NW_wgs_img | grep Size | sed 's/,//' | sed 's/Size is //'));
+					echo $wgs_lbl_dim
+					wgs_width=$(echo ${wgs_lbl_dim[0]});
+					wgs_height=$(echo ${wgs_lbl_dim[1]});
+					wgs_offset_top=$(echo $MAPHEIGHT-$wgs_height | bc);
+					wgs_offset_bottom=5;
+					wgs_offset_left=5;
+					wgs_offset_right=$(echo $MAPWIDTH-$wgs_width | bc);
+					wgs_offset_h_center=$(printf "%.0f" $(echo $MAPWIDTH/2-$wgs_width/2|bc));
+					wgs_coords="$NW_wgs_img,$wgs_offset_left,$wgs_offset_top,1";
+					wgs_coords+=",$NE_wgs_img,$wgs_offset_right,$wgs_offset_top,1";
+					wgs_coords+=",$SW_wgs_img,$wgs_offset_left,$wgs_offset_bottom,1";
+					wgs_coords+=",$SE_wgs_img,$wgs_offset_right,$wgs_offset_bottom,1";
 
-														# Get MGA corner coords - Only Zone 50 at the moment
-													  	NW_mga=$(echo $(gdalinfo ${TEMP_PATH}/mga_50/${WILDFILE}_hs.tif | grep 'Upper Left' |  grep -o '(.*).' | sed 's/[()]//g'));
-													  	NE_mga=$(echo $(gdalinfo ${TEMP_PATH}/mga_50/${WILDFILE}_hs.tif | grep 'Upper Right' |  grep -o '(.*).' | sed 's/[()]//g'));
-													  	SW_mga=$(echo $(gdalinfo ${TEMP_PATH}/mga_50/${WILDFILE}_hs.tif | grep 'Lower Left' |  grep -o '(.*).' | sed 's/[()]//g'));
-													  	SE_mga=$(echo $(gdalinfo ${TEMP_PATH}/mga_50/${WILDFILE}_hs.tif | grep 'Lower Right' |  grep -o '(.*).' | sed 's/[()]//g'));
 
-													  	#Create MGA labels
-														convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 10 -gravity NorthWest label:"${NW_mga}" png32:${TEMP_PATH}/label/${WILDFILE}_NW_mga.png;
-														convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 10 -gravity NorthEast label:"${NE_mga}" png32:${TEMP_PATH}/label/${WILDFILE}_NE_mga.png;
-														convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 10 -gravity SouthWest label:"${SW_mga}" png32:${TEMP_PATH}/label/${WILDFILE}_SW_mga.png;
-														convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 10 -gravity SouthEast label:"${SE_mga}" png32:${TEMP_PATH}/label/${WILDFILE}_SE_mga.png;
-														NW_mga="${TEMP_PATH}/label/${WILDFILE}_NW_mga.png";
-														NE_mga="${TEMP_PATH}/label/${WILDFILE}_NE_mga.png";
-														SW_mga="${TEMP_PATH}/label/${WILDFILE}_SW_mga.png";
-														SE_mga="${TEMP_PATH}/label/${WILDFILE}_SE_mga.png";
-														mga_labels="$NW_mga,$mga_offset_left,$mga_offset_top,1";
-														mga_labels+=",$NE_mga,$mga_offset_right,$mga_offset_top,1";
-														mga_labels+=",$SW_mga,$mga_offset_left,$mga_offset_bottom,1";
-														mga_labels+=",$SE_mga,$mga_offset_right,$mga_offset_bottom,1";
-														legend_offset=$(echo $wgs_offset_bottom+$mga_offset_bottom+10|bc);
+				  	echo "MGA"
+				  	#Create MGA labels
+					NW_mga_img="${TEMP_PATH}/label/${WILDFILE}_NW_mga.png";
+					NE_mga_img="${TEMP_PATH}/label/${WILDFILE}_NE_mga.png";
+					SW_mga_img="${TEMP_PATH}/label/${WILDFILE}_SW_mga.png";
+					SE_mga_img="${TEMP_PATH}/label/${WILDFILE}_SE_mga.png";
+					convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 10 -gravity NorthWest label:"${NW_mga_tile}" png32:${NW_mga_img};
+					convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 10 -gravity NorthEast label:"${NE_mga_tile}" png32:${NE_mga_img};
+					convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 10 -gravity SouthWest label:"${SW_mga_tile}" png32:${SW_mga_img};
+					convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 10 -gravity SouthEast label:"${SE_mga_tile}" png32:${SE_mga_img};
+					mga_lbl_dim=($(gdalinfo $NW_mga_img | grep Size | sed 's/,//' | sed 's/Size is //'));
+					mga_width=$(echo ${mga_lbl_dim[0]});
+					mga_height=$(echo ${mga_lbl_dim[1]});
+					mga_offset_top=$(echo $MAPHEIGHT-$mga_height-$wgs_height|bc);
+					mga_offset_bottom=$(echo $mga_height+wgs_height+5|bc);
+					mga_offset_left=5;
+					mga_offset_right=$(echo $MAPWIDTH-$mga_width|bc);
+					mga_offset_h_center=$(printf "%.0f" $(echo $MAPWIDTH/2-$mga_width/2|bc));
+					mga_coords="$NW_mga_img,$mga_offset_left,$mga_offset_top,1";
+					mga_coords+=",$NE_mga_img,$mga_offset_right,$mga_offset_top,1";
+					mga_coords+=",$SW_mga_img,$mga_offset_left,$mga_offset_bottom,1";
+					mga_coords+=",$SE_mga_img,$mga_offset_right,$mga_offset_bottom,1";
 
+				  	echo "Title"
+					# Create Map Title
+					title_img="${TEMP_PATH}/label/${ZIP_FILENAME}_title.png";
+					convert -background none -fill CornflowerBlue -font "DejaVu-Sans" -pointsize 18 -gravity North label:"Tile: ${WILDFILE}" png32:${title_img};
+					title_Dim=($(gdalinfo ${title_img} | grep Size | sed 's/,//' | sed 's/Size is //'));
+					title_width=$(echo ${title_Dim[0]})
+					title_height=$(echo ${title_Dim[1]})
+					title_x=$(printf "%.0f" $(echo $MAPWIDTH/2-$title_width/2|bc));
+					title_y=$(echo $MAPHEIGHT-$title_height-10|bc);
+					title_label="$title_img,$title_x,$title_y,1";
+
+					legend_offset=$(echo $wgs_offset_bottom+$mga_offset_bottom+10|bc);
+########
+			tile_extent="${TEMP_PATH}/footprint/${WILDFILE}_extent.tif"
+			shp_extent="${TEMP_PATH}/footprint/${WILDFILE}_extent.shp"
+			shp_fence="${WWW_PATH}/footprint/${WILDFILE}_fence.shp"
+			tile_foot="${TEMP_PATH}/footprint/${WILDFILE}_foot_wgs84.kml"
+			foot="${WWW_PATH}/footprint/${WILDFILE}_foot.tif"
+			mission_overview="${WWW_PATH}/overview/${ZIP_FILENAME}_overview.tif"
+			mission_pdf="${WWW_PATH}/pdf/${WILDFILE}_merged.pdf"
+			pdf_link="${HTTP_PATH}/pdf/${WILDFILE}_merged.pdf";
 			# create individual footprint kml
 			echo -e "${PURPLE}Creating footprints${YELLOW}";
-				echo -e "${GREEN}Reducing IR raster colours to make clip fence${YELLOW}";
-					gdal_merge.py -co NBITS=1 -o ${TEMP_PATH}/footprint/${WILDFILE}_extent.tif ${TEMP_PATH}/basemap/${WILDFILE}_ir.tif;
-				echo -e "${GREEN}Polygonising IR clip fence ${TEMP_PATH}/footprint/${WILDFILE}_extent.tif ${YELLOW}";
-					gdal_polygonize.py ${TEMP_PATH}/footprint/${WILDFILE}_extent.tif ${TEMP_PATH}/footprint/${WILDFILE}_extent.shp clip;
-			  	echo -e "${GREEN}Dissolving IR clip fence ${TEMP_PATH}/footprint/${WILDFILE}_fence_wgs84.shp${YELLOW}";
-					ogr2ogr ${WWW_PATH}/footprint/${WILDFILE}_fence.shp ${TEMP_PATH}/footprint/${WILDFILE}_extent.shp -dialect sqlite -sql "SELECT ST_Union(geometryProperty) FROM 'clip'";
+			echo -e "${GREEN}Reducing IR raster colours to make clip fence${YELLOW}";
+			gdal_merge.py -co NBITS=1 -o $foot $ir_base;
+			echo -e "${GREEN}Polygonising IR clip fence $merged_tif ${YELLOW}";
+			gdal_polygonize.py $foot $shp_extent clip;
+			echo -e "${GREEN}Dissolving IR clip fence ${YELLOW}";
+			#echo $shp_fence
+			ogr2ogr "$shp_fence" "$shp_extent" -dialect sqlite -sql "SELECT ST_Union(geometryProperty) FROM 'clip'" -progress;
+			echo -e "${GREEN}Stamping IR clip fence ${YELLOW}";
+			ogr2ogr -f "KML" "$tile_foot" "$shp_fence" -overwrite -a_srs EPSG:4326;
 
-
-
-				echo -e "${GREEN}Stamping IR clip fence ${TEMP_PATH}/footprint/${WILDFILE}_extent_wgs84.shp ${YELLOW}";
-					ogr2ogr -f "KML" ${TEMP_PATH}/footprint/${WILDFILE}_foot_wgs84.kml ${WWW_PATH}/footprint/${WILDFILE}_fence.shp -overwrite -a_srs EPSG:4326;
-					cp ${TEMP_PATH}/footprint/${WILDFILE}_foot_wgs84.kml ${WWW_PATH}/kml/${WILDFILE}_footprint.kml
-
-
-		  	footprint=$(cat ${WWW_PATH}/kml/${WILDFILE}_footprint.kml | grep LinearRing)
-			COORDS_VAR=$(echo $footprint | sed 's= =,10 =g');
-			pdf_link="http://$IP/flir2qr/${z7_FILENAME}/pdf/${WILDFILE}_merged.pdf";
-			CDATA_VAR='<![CDATA[ <a href='${pdf_link}'> ]]> '${WILDFILE}.PDF' <![CDATA[ </a> ]]>';
-			QR_file="${WILDFILE}_qr.png";
-
-			cp /opt/flir2qr/kml/multigeom.kml /opt/flir2qr/kml/temp.kml
-			multigeom_kml="/opt/flir2qr/kml/temp.kml";
-			sed -i 's+TILE_VAR+'"${WILDFILE}"'+g' "$multigeom_kml";
-			sed -i 's+QRIMG_VAR+'"${QR_file}"'+g' "$multigeom_kml";
-			sed -i 's+CENTROID_VAR+'"${centroid}"'+g' "$multigeom_kml";
-			sed -i 's+CDATA_VAR+'"${CDATA_VAR}"'+g' "$multigeom_kml";
-			sed -i 's+COORDS_VAR+'"${COORDS_VAR}"'+g' "$multigeom_kml";
-
-			echo -e "${PURPLE}"
-			cp /opt/flir2qr/kml/foot.kml ${WWW_PATH}/kml/${WILDFILE}_foot.kml
-			multi_kml=$(cat /opt/flir2qr/kml/temp.kml | tr '\n' "\\\n")
-			sed -i -e 's+MULTIGEOM_VAR+'"${multi_kml}"'+g' "${WWW_PATH}/kml/${WILDFILE}_foot.kml";
-			sed -i -e 's+MULTIGEOM_VAR+'"${multi_kml}"' MULTIGEOM_VAR+g' "${WWW_PATH}/kml/merged_foot.kml";
+			#Create PDF
+			echo -e "${PURPLE}Creating ${WILDFILE} PDF for ${WILDFILE}.tif ${YELLOW}";
+			extra_images="$LEGEND,5,$legend_offset,0.5,$mga_coords,$wgs_coords,$title_label,$wgs_lbl,$mga_lbl";
+			gdal_translate $merged_tif $mission_pdf -of PDF -a_srs EPSG:4326 -co EXTRA_IMAGES=$extra_images ;	
+			#-outsize $MAPSIZE
 
 			#create QR code
 			echo -e "${PURPLE}generating QR code for overviews ${YELLOW}";
-			pdf_link="http://$IP/flir2qr/${z7_FILENAME}/pdf/${WILDFILE}_merged.pdf";
 			QR_img="${WWW_PATH}/kml/${WILDFILE}_qr.png";
 			QR_file="${WILDFILE}_qr.png";
-			
+			tile_footprint="${WWW_PATH}/kml/${WILDFILE}.kml";
+
+			cp $FLIR2QR_PATH/kml/ir_footprint.kml $tile_footprint
+
 		  	qrencode -o $QR_img $pdf_link;
-			PDF_URL='<![CDATA[ <a href='${pdf_link}'> ]]> '${WILDFILE}.PDF' <![CDATA[ </a> ]]>'
 
-		  	#construct tile kmz
-		  	cp -f $FLIR2QR_PATH/kml/template.kml ${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml;
-
-	  			centroid=$(echo $centroid | sed 's= ==')
-			  	sed -i 's+QRIMG+'"${QR_file}"'+g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
-			  	sed -i 's/CENTROID/'"${centroid}"'/g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
-			  	sed -i 's/KMLNAME/'"${WILDFILE} QR code"'/g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
-			  	sed -i 's+FOOTPRINT+'"${footprint}"'+g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
-			  	sed -i 's+TILENAME+'"${WILDFILE}"'+g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
-			  	sed -i 's+PDF_URL+'"${PDF_URL}"'+g' "${WWW_PATH}/kml/${WILDFILE}_footprint_qr.kml";
+			# create footprint
+			TILENUM_VAR=${WILDFILE}
+			MISSION_URL_VAR="http://$IP/flir2qr/${ZIP_FILENAME}"
+		  	FOOTPRINT_VAR=$(cat $tile_foot | grep LinearRing)
 			
+			sed -i 's+TILENUM_VAR+'"${WILDFILE}"'+g' "$tile_footprint";
+			sed -i 's+FOOTPRINT_VAR+'"${FOOTPRINT_VAR}"'+g' "$tile_footprint";
+			sed -i 's+MISSION_URL_VAR+'"${MISSION_URL_VAR}"'+g' "$tile_footprint";
 
 		  	cd ${WWW_PATH}/kml
-		  	zip ${WWW_PATH}/kml/${WILDFILE}_foot_qr.zip ${WILDFILE}_footprint_qr.kml ${WILDFILE}_qr.png -j;
-			mv -f ${WWW_PATH}/kml/${WILDFILE}_foot_qr.zip ${WWW_PATH}/kmz/${WILDFILE}_foot_qr.kmz;			
+		  	zip ${WWW_PATH}/kml/${WILDFILE}.zip ${WILDFILE}.kml ${WILDFILE}_qr.png -j;
+			mv -f ${WWW_PATH}/kml/${WILDFILE}.zip ${WWW_PATH}/kmz/${WILDFILE}.kmz;			
 
-			# merge
-				echo -e "${PURPLE}Merging rasters ${YELLOW}";
-					gdal_merge.py -o ${WWW_PATH}/tif/${WILDFILE}_merged.tif ${TEMP_PATH}/vrt/${WILDFILE}_ir.vrt ${TEMP_PATH}/vrt/${WILDFILE}_hs.vrt -co COMPRESS=DEFLATE -co tiled=yes;
-				echo -e "${PURPLE}Creating ${WILDFILE} PDF for ${WILDFILE}.tif ${YELLOW}";
-					extra_images="$LEGEND,5,$legend_offset,0.5,$CRS_labels,$mga_labels,$wgs_labels,$title_label";
-					gdal_translate ${WWW_PATH}/tif/${WILDFILE}_merged.tif ${WWW_PATH}/pdf/${WILDFILE}_merged.pdf -of PDF -a_srs EPSG:4326 -co EXTRA_IMAGES=$extra_images ;	
-					#-outsize $MAPSIZE
+			# create placemark
+			sed -i 's+TILENUM_VAR+'"${WILDFILE}"'+g' "$tile_placemark";
+			sed -i 's+FOOTPRINT_VAR+'"${FOOTPRINT_VAR}"'+g' "$tile_placemark";
+			sed -i 's+MISSION_URL_VAR+'"${MISSION_URL_VAR}"'+g' "$tile_placemark";
+
 		else
 			echo "no hotspots, skipping."
 		fi
 	done
-		
-		sed -i 's+MULTIGEOM_VAR++g' "${WWW_PATH}/kml/merged_foot.kml";
+		nowTime="$SECONDS";
+		runTime=$(echo $nowTime/60-$startTime/60|bc)
+		echo "Individual tiles processed in $runTime minutes";
 
+		ir_merged="${WWW_PATH}/overview/ir_merged.tif";
+		ir_merged_z50="${WWW_PATH}/overview/ir_merged_50.tif";
 		# Merging output for overview
 		echo -e "${PURPLE} Merging hotspot vrts ${YELLOW}";
-		gdal_merge.py -o ${TEMP_PATH}/overview/hs_merged.tif $(ls ${TEMP_PATH}/vrt/*_hs.vrt)  -co COMPRESS=DEFLATE -co tiled=yes;
-		gdalwarp -s_srs EPSG:4326 -t_srs EPSG:28350 ${TEMP_PATH}/overview/hs_merged.tif ${TEMP_PATH}/overview/hs_merged_z50.tif -co COMPRESS=DEFLATE -overwrite -ot Byte;
-		# -ts $MAPSIZE 
-		#gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 ${TEMP_PATH}/overview/hs_merged_z50.tif ${TEMP_PATH}/overview/hs_merged_wgs.tif -co COMPRESS=DEFLATE -overwrite -ts $MAPSIZE -ot Byte;
+		gdal_merge.py -o $ir_merged $(ls ${TEMP_PATH}/vrt/*_ir.vrt)  -co COMPRESS=DEFLATE -co tiled=yes;
+		gdalwarp -s_srs EPSG:4326 -t_srs EPSG:28350 $ir_merged $ir_merged_z50 -co COMPRESS=DEFLATE -overwrite -ot Byte;
+
+		hs_merged="${WWW_PATH}/overview/hs_merged.tif";
+		hs_merged_z50="${WWW_PATH}/overview/hs_merged_50.tif";
+		# Merging output for overview
+		echo -e "${PURPLE} Merging hotspot vrts ${YELLOW}";
+		gdal_merge.py -o $hs_merged $(ls ${TEMP_PATH}/vrt/*_hs.vrt)  -co COMPRESS=DEFLATE -co tiled=yes;
+		gdalwarp -s_srs EPSG:4326 -t_srs EPSG:28350 $hs_merged $hs_merged_z50 -co COMPRESS=DEFLATE -overwrite -ot Byte;
+		hs_merge_dim=($(gdalinfo $hs_merged | grep Size | sed 's/,/ /' | sed 's/Size is //'));
+		MAPWIDTH=$(echo ${hs_merge_dim[0]})
+		MAPHEIGHT=$(echo ${hs_merge_dim[1]})
+		MAPSIZE="$MAPWIDTH $MAPHEIGHT";
+		echo "${WILDFILE} HS Merge dims: $MAPSIZE";
 
 		echo -e "${PURPLE}Getting overview extent ${YELLOW}";
-		hs_merged="${TEMP_PATH}/overview/hs_merged_z50.tif";
+		hs_merged="$hs_merged_z50";
 		# Get WGS84 corner coords 
 	  	NW_hs_merged=$(echo $(gdalinfo $hs_merged | grep 'Upper Left' |  grep -o '(.*).' | sed 's/[()]//g'));
 	  	NE_hs_merged=$(echo $(gdalinfo $hs_merged | grep 'Upper Right' |  grep -o '(.*).' | sed 's/[()]//g'));
@@ -317,256 +364,220 @@ case "$2" in
 		lry=$(echo $lry-$buffer|bc);
 		
 		echo -e "${PURPLE}generating QR code for overviews ${YELLOW}";
-		pdf_link="http://$IP/flir2qr/${z7_FILENAME}/overview/overview.pdf"
-	  	qrencode -o ${TEMP_PATH}/kml/${z7_FILENAME}_overview_pdf.png $pdf_link;
-		PDF_URL='<![CDATA[ <a href='${pdf_link}'> ]]> '${z7_FILENAME}.PDF' <![CDATA[ </a> ]]>'
+		pdf_link="http://$IP/flir2qr/${ZIP_FILENAME}/overview/overview.pdf"
+	  	qrencode -o ${TEMP_PATH}/kml/${ZIP_FILENAME}_overview_pdf.png $pdf_link;
+		PDF_URL='<![CDATA[ <a href='${pdf_link}'> ]]> '${ZIP_FILENAME}.PDF' <![CDATA[ </a> ]]>'
+		overview_tif_z50="${WWW_PATH}/overview/overview_z50.tif"
+		cog_master="${FLIR2QR_PATH}/base/merge3.tif"
+		cog_base="${WWW_PATH}/overview/cog_base.tif"
+		gdalwarp -dstalpha -te $ulx $lry $lrx $uly -co COMPRESS=DEFLATE -overwrite -ot Byte $cog_master $cog_base -ts $MAPSIZE;
 
-	  	#construct overview kmz
-	  	cp -f $FLIR2QR_PATH/kml/template.kml ${TEMP_PATH}/kml/${z7_FILENAME}_qr.kml;
-	  	echo -e "${PURPLE}Creating centroid placemark at $centroid ${YELLOW}";
-
-	  		centroid=$(echo $centroid | sed 's= ==')
-		  	sed -i 's/QRIMG/'"${z7_FILENAME}_overview_pdf.png"'/g' "${TEMP_PATH}/kml/${z7_FILENAME}_qr.kml";
-		  	sed -i 's/CENTROID/'"${centroid}"'/g' "${TEMP_PATH}/kml/${z7_FILENAME}_qr.kml";
-		  	sed -i 's/KMLNAME/'"${z7_FILENAME} QR code"'/g' "${TEMP_PATH}/kml/${z7_FILENAME}_qr.kml";
-		  	sed -i 's+FOOTPRINT+''+g' "${TEMP_PATH}/kml/${z7_FILENAME}_qr.kml";
-		  	sed -i 's+TILENAME+'"${z7_FILENAME}"'+g' "${TEMP_PATH}/kml/${z7_FILENAME}_qr.kml";
-		  	sed -i 's+PDF_URL+'"${pdf_link}"'+g' "${TEMP_PATH}/kml/${z7_FILENAME}_qr.kml";
-
-	  	cd ${TEMP_PATH}/kml
-	  	zip ${TEMP_PATH}/kml/${z7_FILENAME}_qr.zip ${z7_FILENAME}_qr.kml ${z7_FILENAME}_overview_pdf.png -j;
-		mv -f ${TEMP_PATH}/kml/${z7_FILENAME}_qr.zip ${WWW_PATH}/kmz/${z7_FILENAME}_qr.kmz;		
-
-		gdalwarp -dstalpha -te $ulx $lry $lrx $uly -co COMPRESS=DEFLATE -overwrite -ot Byte ${FLIR2QR_PATH}/base/merge3.tif ${TEMP_PATH}/overview/COG_base.tif
-		#-ts $MAPSIZE 
-		#gdalwarp -dstalpha -te $ulx $lry $lrx $uly -co COMPRESS=DEFLATE -overwrite -ts $MAPSIZE -ot Byte ${FLIR2QR_PATH}/base/203031.tif ${TEMP_PATH}/overview/COG_base.tif
-		
 		echo -e "${PURPLE}Creating TIF overview ${YELLOW}";
-		gdal_merge.py -o ${TEMP_PATH}/overview/overview_z50.tif ${TEMP_PATH}/overview/COG_base.tif ${TEMP_PATH}/overview/hs_merged_z50.tif -co COMPRESS=DEFLATE -co tiled=yes;
-		gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 ${TEMP_PATH}/overview/overview_z50.tif ${WWW_PATH}/overview/${z7_FILENAME}_overview.tif -co COMPRESS=DEFLATE -overwrite -ot Byte;
-		# -ts $MAPSIZE
+		echo $overview_tif_z50
+		echo  $cog_base
+		echo $hs_merged_z50
+		echo $ps_x
+		gdal_merge.py -o $overview_tif_z50 $cog_base $hs_merged_z50 -co COMPRESS=DEFLATE -co tiled=yes;
+		gdalwarp -s_srs EPSG:28350 -t_srs EPSG:4326 $overview_tif_z50 $mission_overview -co COMPRESS=DEFLATE -overwrite -ot Byte;
+		#  -ps $ps_x $ps_x  -ps 0.000004 0.000004
 														 
-																# Get Overview dimensions
-																echo -e "${PURPLE}Get Overview dimensions ${YELLOW}";
-																ov_Dim=($(gdalinfo ${WWW_PATH}/overview/${z7_FILENAME}_overview.tif | grep Size | sed 's/,/ /' | sed 's/Size is //'));
-																MAPWIDTH=$(echo ${ov_Dim[0]})
-																MAPHEIGHT=$(echo ${ov_Dim[1]})
-																ASPECTRATIO=$(echo ${ov_Dim[1]}/${ov_Dim[0]}|bc)
-																MAPWIDTH=18000;
-																MAPHEIGHT=$(echo $ASPECTRATIO*18000|bc);
-																MAPSIZE="$MAPWIDTH $MAPHEIGHT";
-																echo "map dims"
-																echo $MAPHEIGHT
-																echo $MAPWIDTH
-																# Create CRS Labels and Title
-																echo -e "${PURPLE} create CRS and title labels ${YELLOW}";
-																WGS_label="WGS84";
-																MGA_label="MGA Zone 50";
-																title_txt="MISSION: ${z7_FILENAME}";
-																convert -background white -fill CornflowerBlue -font "DejaVu-Sans" -pointsize 45 -gravity North label:"${title_txt}" png32:${TEMP_PATH}/label/${z7_FILENAME}_title.png;
-																convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 27 -gravity South label:"${MGA_label}" png32:${TEMP_PATH}/label/mga_label.png;
-																convert -background white -fill green -font "DejaVu-Sans" -pointsize 27 -gravity South label:"${WGS_label}" png32:${TEMP_PATH}/label/wgs84_label.png;
-																mga_img="${TEMP_PATH}/label/mga_label.png";
-																wgs_img="${TEMP_PATH}/label/wgs84_label.png";
-																title_img="${TEMP_PATH}/label/${z7_FILENAME}_title.png";
+		# Get Overview dimensions
+		echo -e "${PURPLE}Get Overview dimensions ${YELLOW}";
+		ov_Dim=($(gdalinfo $mission_overview | grep Size | sed 's/,/ /' | sed 's/Size is //'));
+		MAPWIDTH=$(echo ${ov_Dim[0]})
+		MAPHEIGHT=$(echo ${ov_Dim[1]})
+		ASPECTRATIO=$(echo ${ov_Dim[1]}/${ov_Dim[0]}|bc)
+		MAPSIZE="$MAPWIDTH $MAPHEIGHT";
+		echo "overview dims"
+		echo $MAPHEIGHT
+		echo $MAPWIDTH
+		# Create CRS Labels and Title
+		echo -e "${PURPLE} create CRS and title labels ${YELLOW}";
+		WGS_label="WGS84";
+		MGA_label="MGA Zone 50";
+		title_txt="MISSION: ${ZIP_FILENAME}";
+		convert -background white -fill CornflowerBlue -font "DejaVu-Sans" -pointsize 45 -gravity North label:"${title_txt}" png32:${TEMP_PATH}/label/${ZIP_FILENAME}_title.png;
+		convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 27 -gravity South label:"${MGA_label}" png32:${TEMP_PATH}/label/mga_label.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 27 -gravity South label:"${WGS_label}" png32:${TEMP_PATH}/label/wgs84_label.png;
+		mga_img="${TEMP_PATH}/label/mga_label.png";
+		wgs_img="${TEMP_PATH}/label/wgs84_label.png";
+		title_img="${TEMP_PATH}/label/${ZIP_FILENAME}_title.png";
 
-																# Calculate label offsets
-																title_Dim=($(gdalinfo ${TEMP_PATH}/label/${z7_FILENAME}_title.png | grep Size | sed 's/,//' | sed 's/Size is //'));
-																title_width=$(echo ${title_Dim[0]});
-																title_height=$(echo ${title_Dim[1]});
+		# Calculate label offsets
+		title_Dim=($(gdalinfo ${TEMP_PATH}/label/${ZIP_FILENAME}_title.png | grep Size | sed 's/,//' | sed 's/Size is //'));
+		title_width=$(echo ${title_Dim[0]});
+		title_height=$(echo ${title_Dim[1]});
 
-																mga_Dim=($(gdalinfo $mga_img | grep Size | sed 's/,//' | sed 's/Size is //'));
-																mga_width=$(echo ${mga_Dim[0]});
-																mga_height=$(echo ${mga_Dim[1]});
+		mga_lbl_dim=($(gdalinfo $mga_img | grep Size | sed 's/,//' | sed 's/Size is //'));
+		mga_width=$(echo ${mga_lbl_dim[0]});
+		mga_height=$(echo ${mga_lbl_dim[1]});
 
-																wgs_Dim=($(gdalinfo $wgs_img | grep Size | sed 's/,//' | sed 's/Size is //'));
-																wgs_width=$(echo ${wgs_Dim[0]});
-																wgs_height=$(echo ${wgs_Dim[1]});
+		wgs_lbl_dim=($(gdalinfo $wgs_img | grep Size | sed 's/,//' | sed 's/Size is //'));
+		wgs_width=$(echo ${wgs_lbl_dim[0]});
+		wgs_height=$(echo ${wgs_lbl_dim[1]});
 
-																title_offset_bottom=$(echo $title_height|bc);
-																title_offset_top=$(echo $MAPHEIGHT-$title_height|bc);
-																title_offset_left=5;
-																title_offset_h_center=$(printf "%.0f" $(echo $MAPWIDTH/2-$title_width/2|bc));
-																title_offset_right=$(echo $MAPWIDTH-$title_width*2|bc);
+		title_offset_bottom=$(echo $title_height|bc);
+		title_offset_top=$(echo $MAPHEIGHT-$title_height|bc);
+		title_offset_left=5;
+		title_offset_h_center=$(printf "%.0f" $(echo $MAPWIDTH/2-$title_width/2|bc));
+		title_offset_right=$(echo $MAPWIDTH-$title_width*2|bc);
 
-																mga_offset_bottom=$(echo $mga_height+wgs_height|bc);
-																mga_offset_top=$(echo $MAPHEIGHT-$mga_height-$wgs_height|bc);
-																mga_offset_left=5;
-																mga_offset_h_center=$(printf "%.0f" $(echo $MAPWIDTH/2-$mga_width/2|bc));
-																mga_offset_right=$(echo $MAPWIDTH-$mga_width*2|bc);
+		mga_offset_bottom=$(echo $mga_height+wgs_height|bc);
+		mga_offset_top=$(echo $MAPHEIGHT-$mga_height-$wgs_height|bc);
+		mga_offset_left=5;
+		mga_offset_h_center=$(printf "%.0f" $(echo $MAPWIDTH/2-$mga_width/2|bc));
+		mga_offset_right=$(echo $MAPWIDTH-$mga_width*2|bc);
 
-																wgs_offset_bottom=5;
-																wgs_offset_top=$(echo $MAPHEIGHT-$wgs_height|bc);
-																wgs_offset_left=5;
-																wgs_offset_h_center=$(printf "%.0f" $(echo $MAPWIDTH/2-$wgs_width/2|bc));
-																wgs_offset_right=$(echo $MAPWIDTH-$wgs_width*4|bc);
+		wgs_offset_bottom=5;
+		wgs_offset_top=$(echo $MAPHEIGHT-$wgs_height|bc);
+		wgs_offset_left=5;
+		wgs_offset_h_center=$(printf "%.0f" $(echo $MAPWIDTH/2-$wgs_width/2|bc));
+		wgs_offset_right=$(echo $MAPWIDTH-$wgs_width*4|bc);
 
-																title_x=$(printf "%.0f" $(echo $MAPWIDTH/2-$title_width/2|bc));
-																title_y=$(echo $MAPHEIGHT-$title_height-10|bc);
-																title_label=",$tile_img,$title_x,$title_y,1";
+		title_x=$(printf "%.0f" $(echo $MAPWIDTH/2-$title_width/2|bc));
+		title_y=$(echo $MAPHEIGHT-$title_height-10|bc);
+		title_label=",$tile_img,$title_x,$title_y,1";
 
-																CRS_labels="$title_img,$title_offset_h_center,$title_offset_top,1";
-																CRS_labels+=",$mga_img,$mga_offset_h_center,$mga_offset_bottom,1";
-																CRS_labels+=",$wgs_img,$wgs_offset_h_center,$wgs_offset_bottom,1";
+		CRS_labels="$title_img,$title_offset_h_center,$title_offset_top,1";
+		CRS_labels+=",$mga_img,$mga_offset_h_center,$mga_offset_bottom,1";
+		CRS_labels+=",$wgs_img,$wgs_offset_h_center,$wgs_offset_bottom,1";
 
-																ov_wgs_tif="${WWW_PATH}/overview/${z7_FILENAME}_overview.tif";
-																# Get WGS84 corner coords 
-															  	NW_ov_wgs=$(echo $(gdalinfo $ov_wgs_tif | grep 'Upper Left' |  grep -o '(.*).' | sed 's/[()]//g'));
-															  	NE_ov_wgs=$(echo $(gdalinfo $ov_wgs_tif | grep 'Upper Right' |  grep -o '(.*).' | sed 's/[()]//g'));
-															  	SW_ov_wgs=$(echo $(gdalinfo $ov_wgs_tif | grep 'Lower Left' |  grep -o '(.*).' | sed 's/[()]//g'));
-															  	SE_ov_wgs=$(echo $(gdalinfo $ov_wgs_tif | grep 'Lower Right' |  grep -o '(.*).' | sed 's/[()]//g'));
-															  	centroid_ov_wgs=$(echo $(gdalinfo $ov_wgs_tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
-															  	# Create WGS labels
-																convert -background white -fill green -font "DejaVu-Sans" -pointsize 27 -gravity NorthWest label:"${NW_ov_wgs}" png32:${TEMP_PATH}/label/NW_ov_wgs.png;
-																convert -background white -fill green -font "DejaVu-Sans" -pointsize 27 -gravity NorthEast label:"${NE_ov_wgs}" png32:${TEMP_PATH}/label/NE_ov_wgs.png;
-																convert -background white -fill green -font "DejaVu-Sans" -pointsize 27 -gravity SouthWest label:"${SW_ov_wgs}" png32:${TEMP_PATH}/label/SW_ov_wgs.png;
-																convert -background white -fill green -font "DejaVu-Sans" -pointsize 27 -gravity SouthEast label:"${SE_ov_wgs}" png32:${TEMP_PATH}/label/SE_ov_wgs.png;
-																NW_ov_wgs_img="${TEMP_PATH}/label/NW_ov_wgs.png";
-																NE_ov_wgs_img="${TEMP_PATH}/label/NE_ov_wgs.png";
-																SW_ov_wgs_img="${TEMP_PATH}/label/SW_ov_wgs.png";
-																SE_ov_wgs_img="${TEMP_PATH}/label/SE_ov_wgs.png";
-																labels_ov_wgs="$NW_ov_wgs_img,$wgs_offset_left,$wgs_offset_top,1";
-																labels_ov_wgs+=",$NE_ov_wgs_img,$wgs_offset_right,$wgs_offset_top,1";
-																labels_ov_wgs+=",$SW_ov_wgs_img,$wgs_offset_left,$wgs_offset_bottom,1";
-																labels_ov_wgs+=",$SE_ov_wgs_img,$wgs_offset_right,$wgs_offset_bottom,1";
+		ov_wgs_tif="$mission_overview";
+		# Get WGS84 corner coords 
+	  	NW_ov_wgs=$(echo $(gdalinfo $ov_wgs_tif | grep 'Upper Left' |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	NE_ov_wgs=$(echo $(gdalinfo $ov_wgs_tif | grep 'Upper Right' |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	SW_ov_wgs=$(echo $(gdalinfo $ov_wgs_tif | grep 'Lower Left' |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	SE_ov_wgs=$(echo $(gdalinfo $ov_wgs_tif | grep 'Lower Right' |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	centroid_ov_wgs=$(echo $(gdalinfo $ov_wgs_tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	# Create WGS labels
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 27 -gravity NorthWest label:"${NW_ov_wgs}" png32:${TEMP_PATH}/label/NW_ov_wgs.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 27 -gravity NorthEast label:"${NE_ov_wgs}" png32:${TEMP_PATH}/label/NE_ov_wgs.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 27 -gravity SouthWest label:"${SW_ov_wgs}" png32:${TEMP_PATH}/label/SW_ov_wgs.png;
+		convert -background white -fill green -font "DejaVu-Sans" -pointsize 27 -gravity SouthEast label:"${SE_ov_wgs}" png32:${TEMP_PATH}/label/SE_ov_wgs.png;
+		NW_ov_wgs_img="${TEMP_PATH}/label/NW_ov_wgs.png";
+		NE_ov_wgs_img="${TEMP_PATH}/label/NE_ov_wgs.png";
+		SW_ov_wgs_img="${TEMP_PATH}/label/SW_ov_wgs.png";
+		SE_ov_wgs_img="${TEMP_PATH}/label/SE_ov_wgs.png";
+		labels_ov_wgs="$NW_ov_wgs_img,$wgs_offset_left,$wgs_offset_top,1";
+		labels_ov_wgs+=",$NE_ov_wgs_img,$wgs_offset_right,$wgs_offset_top,1";
+		labels_ov_wgs+=",$SW_ov_wgs_img,$wgs_offset_left,$wgs_offset_bottom,1";
+		labels_ov_wgs+=",$SE_ov_wgs_img,$wgs_offset_right,$wgs_offset_bottom,1";
 
-																# Define bounding box
-																ul=($(echo $NW_ov_wgs|sed 's/,//'));
-																ulx=$(echo ${ul[0]});
-																uly=$(echo ${ul[1]});
-																lr=($(echo $SE_ov_wgs|sed 's/,//'));
-																lrx=$(echo ${lr[0]});
-																lry=$(echo ${lr[1]});
+		# Define bounding box
+		ul=($(echo $NW_ov_wgs|sed 's/,//'));
+		ulx=$(echo ${ul[0]});
+		uly=$(echo ${ul[1]});
+		lr=($(echo $SE_ov_wgs|sed 's/,//'));
+		lrx=$(echo ${lr[0]});
+		lry=$(echo ${lr[1]});
+		overview_bbox_wgs="$ulx, $uly, $lrx, $lry"
 
-																ov_mga_tif="${TEMP_PATH}/overview/overview_z50.tif";
-																# Get mga corner coords 
-															  	NW_ov_mga=$(echo $(gdalinfo $ov_mga_tif | grep 'Upper Left' |  grep -o '(.*).' | sed 's/[()]//g'));
-															  	NE_ov_mga=$(echo $(gdalinfo $ov_mga_tif | grep 'Upper Right' |  grep -o '(.*).' | sed 's/[()]//g'));
-															  	SW_ov_mga=$(echo $(gdalinfo $ov_mga_tif | grep 'Lower Left' |  grep -o '(.*).' | sed 's/[()]//g'));
-															  	SE_ov_mga=$(echo $(gdalinfo $ov_mga_tif | grep 'Lower Right' |  grep -o '(.*).' | sed 's/[()]//g'));
-															  	centroid_ov_mga=$(echo $(gdalinfo $ov_mga_tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
-															  	# Create mga labels
-																convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 27 -gravity NorthWest label:"${NW_ov_mga}" png32:${TEMP_PATH}/label/NW_ov_mga.png;
-																convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 27 -gravity NorthEast label:"${NE_ov_mga}" png32:${TEMP_PATH}/label/NE_ov_mga.png;
-																convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 27 -gravity SouthWest label:"${SW_ov_mga}" png32:${TEMP_PATH}/label/SW_ov_mga.png;
-																convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 27 -gravity SouthEast label:"${SE_ov_mga}" png32:${TEMP_PATH}/label/SE_ov_mga.png;
-																NW_ov_mga_img="${TEMP_PATH}/label/NW_ov_mga.png";
-																NE_ov_mga_img="${TEMP_PATH}/label/NE_ov_mga.png";
-																SW_ov_mga_img="${TEMP_PATH}/label/SW_ov_mga.png";
-																SE_ov_mga_img="${TEMP_PATH}/label/SE_ov_mga.png";
-																labels_ov_mga="$NW_ov_mga_img,$mga_offset_left,$mga_offset_top,1";
-																labels_ov_mga+=",$NE_ov_mga_img,$mga_offset_right,$mga_offset_top,1";
-																labels_ov_mga+=",$SW_ov_mga_img,$mga_offset_left,$mga_offset_bottom,1";
-																labels_ov_mga+=",$SE_ov_mga_img,$mga_offset_right,$mga_offset_bottom,1";
+		ov_mga_tif="$overview_tif_z50";
+		# Get mga corner coords 
+	  	NW_ov_mga=$(echo $(gdalinfo $ov_mga_tif | grep 'Upper Left' |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	NE_ov_mga=$(echo $(gdalinfo $ov_mga_tif | grep 'Upper Right' |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	SW_ov_mga=$(echo $(gdalinfo $ov_mga_tif | grep 'Lower Left' |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	SE_ov_mga=$(echo $(gdalinfo $ov_mga_tif | grep 'Lower Right' |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	centroid_ov_mga=$(echo $(gdalinfo $ov_mga_tif | grep Center |  grep -o '(.*).' | sed 's/[()]//g'));
+	  	# Create mga labels
+		convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 27 -gravity NorthWest label:"${NW_ov_mga}" png32:${TEMP_PATH}/label/NW_ov_mga.png;
+		convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 27 -gravity NorthEast label:"${NE_ov_mga}" png32:${TEMP_PATH}/label/NE_ov_mga.png;
+		convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 27 -gravity SouthWest label:"${SW_ov_mga}" png32:${TEMP_PATH}/label/SW_ov_mga.png;
+		convert -background white -fill DeepSkyBlue3 -font "DejaVu-Sans" -pointsize 27 -gravity SouthEast label:"${SE_ov_mga}" png32:${TEMP_PATH}/label/SE_ov_mga.png;
+		NW_ov_mga_img="${TEMP_PATH}/label/NW_ov_mga.png";
+		NE_ov_mga_img="${TEMP_PATH}/label/NE_ov_mga.png";
+		SW_ov_mga_img="${TEMP_PATH}/label/SW_ov_mga.png";
+		SE_ov_mga_img="${TEMP_PATH}/label/SE_ov_mga.png";
+		labels_ov_mga="$NW_ov_mga_img,$mga_offset_left,$mga_offset_top,1";
+		labels_ov_mga+=",$NE_ov_mga_img,$mga_offset_right,$mga_offset_top,1";
+		labels_ov_mga+=",$SW_ov_mga_img,$mga_offset_left,$mga_offset_bottom,1";
+		labels_ov_mga+=",$SE_ov_mga_img,$mga_offset_right,$mga_offset_bottom,1";
 
 		echo -e "${PURPLE}Creating overview vrt";
-		gdalbuildvrt ${TEMP_PATH}/${z7_FILENAME}_overview.vrt ${WWW_PATH}/overview/${z7_FILENAME}_overview.tif;
+
 		
 		extra_images="$LEGEND,5,110,0.5,$CRS_labels,$labels_ov_mga,$labels_ov_wgs";
-		gdal_translate ${TEMP_PATH}/${z7_FILENAME}_overview.vrt ${WWW_PATH}/overview/${z7_FILENAME}_overview.pdf -a_srs EPSG:4326 -co COMPRESS=DEFLATE -of PDF -co EXTRA_IMAGES=$extra_images ;
+		gdal_translate $mission_overview ${WWW_PATH}/overview/${ZIP_FILENAME}_overview.pdf -a_srs EPSG:4326 -co COMPRESS=DEFLATE -of PDF -co EXTRA_IMAGES=$extra_images ;
 		#-outsize $MAPSIZE
 
 
 		echo -e "${PURPLE}Creating Bing overview";
-		gdal2tiles.py -q -k -t $2 -b Ag4sqB8_1kZH0Uqc4M1kZeN1hoWHTvmv-cv7PR_YO04PKMvevlYzKyLEcEuy_j_J ${WWW_PATH}/overview/${z7_FILENAME}_overview.tif ${WWW_PATH}/overview/map --zoom 12-17;
-		mv ${WWW_PATH}/overview/map/openlayers.html ${WWW_PATH}/overview/map/index.html;
-		mkdir  ${WWW_PATH}/overview/map/img;
-
-		#cp /opt/flir/img/*.png  ${WWW_PATH}/overview/map/img ${WWW_PATH}/overview/map/img;
 		slippy=${WWW_PATH}/overview/map/index.html;
-		sed -i 's/broad, baer, bhyb,//' "$slippy";
-		sed -i 's/osm, tmsoverlay]);//' "$slippy";
-		sed -i 's/gmap, gsat, ghyb, gter,/bhyb, broad, baer, tmsoverlay]); KML_VAR/' "$slippy";
-		sed -i 's,http://openlayers.org/api/2.12/OpenLayers.js,/flir2qr/js/ol.js,g' "$slippy";
-        sed -i 's,http://www.openlayers.org/api/2.12/OpenLayers.js,/flir2qr/js/ol.js,g' "$slippy";
-        sed -i 's,</title>,</title><link rel="stylesheet" href="/flir2qr/css/style.css" />,g' "$slippy";
-#		sed -i 's,<script src="/flir2qr/js/ol.js"></script>,,g' "$slippy";
-
+		gdal2tiles.py -q -k -t $2 -b Ag4sqB8_1kZH0Uqc4M1kZeN1hoWHTvmv-cv7PR_YO04PKMvevlYzKyLEcEuy_j_J $mission_overview ${WWW_PATH}/overview/map --zoom 14-18;
+		cp "${FLIR2QR_PATH}/html/map.html" "${slippy}";
+		cd "${WWW_PATH}/overview/map/"
+		mkdir  ${WWW_PATH}/overview/map/img;
 		echo -e "${PURPLE}Creating bing base in overview";
-		sed -i 's=map.addLayers([bhyb, broad, baer, tmsoverlay]);=map.addLayers([bhyb, broad, baer, tmsoverlay]); KML_VAR;=g' "$slippy";
-		#slippy_html=$(cat "$slippy" | tr "^" "\r\n");
-		#slippy_html=$(cat "$slippy" | tr "^" "\r\n");
-		#echo $slippy_html > $slippy;
+
+		nowTime="$SECONDS";
+		runTime=$(echo $nowTime/60-$startTime/60|bc)
+		echo "runtime: processed in $runTime minutes";
 
 		echo -e "${PURPLE}Creating footprints in overview";
 
+	
+		kml="";
 
-	for f in ${WWW_PATH}/footprint/*.shp; do
-		fname="$(basename "$f")";
-		layer=${fname%.shp};
-		tile=$(echo $layer | sed 's=_fence==')
-  		ogrinfo $f -sql "ALTER TABLE $layer ADD COLUMN tilename character(15)"
-  		ogrinfo $f -dialect SQLite -sql "UPDATE '$layer' SET tilename = '$tile'"
-		ogr2ogr -update -append ${WWW_PATH}/shp/merge.shp $f -f "ESRI Shapefile";
-	done;
-
-	ogr2ogr -f "KML" ${WWW_PATH}/shp/merge.kml ${WWW_PATH}/shp/merge.shp -overwrite -a_srs EPSG:4326 -dsco AltitudeMode=relativeToGround -dsco NameField=tilename;
-	footprint=$(cat ${WWW_PATH}/shp/merge.kml | sed 's= =,10 =g');
+		echo -e "${PURPLE}Creating KML Overview Overlay ${YELLOW}";
+	  	gdal2tiles.py -q -k -t "$2" "$mission_overview" ${WWW_PATH}/kmz/overview.kml --zoom 14-18;
+	  	cd ${WWW_PATH}/kmz/overview.kml;
+			echo -e "${PURPLE}Zipping KML ${YELLOW}";
+	  	zip ${WWW_PATH}/kmz/overview.zip . -r -q;
+			echo -e "${PURPLE}Converting to KMZ ${YELLOW}";
+		mv -f ${WWW_PATH}/kmz/overview.zip ${WWW_PATH}/overview/${ZIP_FILENAME}_overview.kmz;
 
 
-	for kml in ${WWW_PATH}/kml/*_footprint_qr.kml; do
-		poly=$(cat "$kml" | grep Polygon)
-		
-		kml="$(basename "$kml")";
-		kml=${HTTP_PATH}/kml/${kml};
-		
-		#sed -i 's=KML_VAR='"${kml_layer}"'; KML_VAR=g' "$slippy";
+		MAP_BOUNDS_VAR=$(cat ${WWW_PATH}/overview/map/openlayers.html | grep OpenLayers.Bounds)
+		FOOTPRINT_KML_VAR="${HTTP_PATH}/kml/${ZIP_FILENAME}.kml";
+		HOTSPOT_KML_VAR="${HTTP_PATH}/kml/hotspots.kml";
+
+		sed -i 's=ZIP_FILENAME_VAR='"${ZIP_FILENAME}"'=' "$slippy";
+		sed -i 's+MAP_BOUNDS_VAR+'"${MAP_BOUNDS_VAR}"'+' "$slippy";
+		sed -i 's=FOOTPRINT_KML_VAR='"${FOOTPRINT_KML_VAR}"'=g' "$slippy";
+		sed -i 's=HOTSPOT_KML_VAR='"${HOTSPOT_KML_VAR}"'=g' "$slippy";
+		sed -i 's=MISSION_HTTP_VAR='"${HTTP_PATH}"'=g' "$slippy";
+            
+	nowTime="$SECONDS";
+	runTime=$(echo $nowTime/60-$startTime/60|bc)
+	echo "runtime: processed in $runTime minutes";
+
+	missions='<?xml version="1.0" encoding="UTF-8"?>'
+	missions+='<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">'
+	missions+="<Document><name>Mission ${ZIP_FILENAME} </name><open>1</open>"
+	missions+=$(cat $FLIR2QR_PATH/kml/style.kml)
+	
+	for kml in ${WWW_PATH}/kml/*_place.kml; do
+		missions+="$(cat $kml)"
 	done
-		#slippy_html=$(cat "$slippy" | tr "^" "\r\n");
-		#echo $slippy_html > $slippy;
-		sed -i 's=KML_VAR==g' "$slippy";
-		#sed -i 's=^==g' "$slippy";
+		missions+="</Document>"
+		missions+="</kml>"
+		echo $missions > $mission_footprints
 
 
- 		echo -e "${PURPLE}Creating KML Overview Overlay ${YELLOW}";
-		  	gdal2tiles.py -q -k -t $2 ${TEMP_PATH}/${z7_FILENAME}_overview.vrt ${TEMP_PATH}/kmz/overview.kml --zoom 12-17;
-		  	cd ${TEMP_PATH}/kmz/overview.kml;
- 			echo -e "${PURPLE}Converting to KMZ ${YELLOW}";
-		  	zip ${TEMP_PATH}/overlay/overview.zip . -r -q;
-			mv -f ${TEMP_PATH}/overlay/overview.zip ${WWW_PATH}/overview/${z7_FILENAME}_overview.kmz;
+
+	  	cd ${WWW_PATH}/kml;
+			echo -e "${PURPLE}Zipping footprint KML ${YELLOW}";
+	  	zip ${WWW_PATH}/kml/${ZIP_FILENAME}_footprints.zip ${ZIP_FILENAME}.kml $(ls *_qr.png) -r -q;
+			echo -e "${PURPLE}Converting to KMZ ${YELLOW}";
+		mv -f ${WWW_PATH}/kml/${ZIP_FILENAME}_footprints.zip ${WWW_PATH}/overview/${ZIP_FILENAME}_footprints.kmz;
 
 
-		echo -e "Processing $2 complete"
+
 		echo -e "${BLUE}Processing $2 complete! ${WHITE}";
-		echo -e "${GREEN}Output data available at http://${IP}/flir2qr/${z7_FILENAME} ${WHITE}";
+			pdf_link="http://$IP/flir2qr/${ZIP_FILENAME}/pdf/${ZIP_FILENAME}_merged.pdf";
+			QR_img="${WWW_PATH}/kml/${ZIP_FILENAME}_qr.png";
+
+		  	qrencode -o $QR_img $pdf_link;
 		
-		
-		echo -e "${PURPLE}generating QR code for overviews ${YELLOW}";
-		pdf_link="http://$IP/flir2qr/${z7_FILENAME}/overview/overview.pdf"
-		qrencode -o ${TEMP_PATH}/kml/${z7_FILENAME}_overview_tif.png http://$IP/flir2qr/${z7_FILENAME}/overview/overview.tif;
-	  	qrencode -o ${TEMP_PATH}/kml/${z7_FILENAME}_overview_pdf.png $pdf_link;
-		PDF_URL='<![CDATA[ <a href='${pdf_link}'> ]]> '${z7_FILENAME}.PDF' <![CDATA[ </a> ]]>'
-
-
-	  	#construct footprint kmz
-	  	cp -f $FLIR2QR_PATH/kml/template.kml ${TEMP_PATH}/kml/${z7_FILENAME}_qr.kml;
-
-	  	echo -e "${PURPLE}Creating centroid placemark at $centroid ${YELLOW}";
-	  		centroid=$(echo $centroid | sed 's= ==')
-		  	sed -i 's/QRIMG/'"${z7_FILENAME}_overview_pdf.png"'/g' "${TEMP_PATH}/kml/${z7_FILENAME}_qr.kml";
-		  	sed -i 's/CENTROID/'"${centroid}"'/g' "${TEMP_PATH}/kml/${z7_FILENAME}_qr.kml";
-		  	sed -i 's/KMLNAME/'"${z7_FILENAME} QR code"'/g' "${TEMP_PATH}/kml/${z7_FILENAME}_qr.kml";
-		  	sed -i 's+FOOTPRINT+''+g' "${TEMP_PATH}/kml/${z7_FILENAME}_qr.kml";
-		  	sed -i 's+TILENAME+'"${z7_FILENAME}"'+g' "${TEMP_PATH}/kml/${z7_FILENAME}_qr.kml";
-		  	sed -i 's+PDF_URL+'"${PDF_URL}"'+g' "${TEMP_PATH}/kml/${z7_FILENAME}_qr.kml";
-
-
-	  		cd ${TEMP_PATH}/kml
-		  	zip ${z7_FILENAME}_qr.zip ${z7_FILENAME}_qr.kml ${z7_FILENAME}_overview_pdf.png  -j;
-			mv -f ${z7_FILENAME}_qr.zip ${WWW_PATH}/overview/${z7_FILENAME}_footprints.kmz;			
-			
-		rm -Rf ${WWW_PATH}/overlay;
-		#cp -f $FLIR2QR_PATH/log/${z7_FILENAME}.log ${WWW_PATH}/log/${z7_FILENAME}.log;
-
-		endTime="$SECONDS";
-		qrencode -o ${WWW_PATH}/qr/mission.png https://$IP/flir2qr/${z7_FILENAME}/;
-		/home/$USER/emailnotifiy.sh "Thermal flight ${z7_FILENAME} complete" "${WWW_PATH}/overview/overview.pdf" "${IP}/flir2qr/${z7_FILENAME}";
+		qrencode -o ${WWW_PATH}/qr/mission.png https://$IP/flir2qr/${ZIP_FILENAME}/;
+		/home/$USER/emailnotifiy.sh "Thermal flight ${ZIP_FILENAME} complete" "${WWW_PATH}/overview/overview.pdf" "${HTTP_PATH}";
 	 
 	 	#Setup GUI
 		echo -e "${PURPLE}creating GUIs ${YELLOW}";
 	 	cp -r /opt/flir2qr/html/missions.html /var/www/html/flir2qr/index.html;
 	 	missions_html="/var/www/html/flir2qr/index.html";
 
+		echo -e "${BLUE}Processing $2 complete! ${WHITE}";
 	 	cd /var/www/html/flir2qr;
 		mission_folders=$(ls -d */);
 
@@ -577,26 +588,30 @@ case "$2" in
 			mission=$(echo $mission | sed 's=/==')
 			if [[ ${#mission} -gt 3 ]]; then
 
-				sed -i 's,MISSION_LINK,<a href="MISSION_URL" target="_blank"><div class="def_buttons" id="map_btn" onclick="">MISSION_URL<span class="tooltip" id="map_tooltip"><\/span><\/div><\/a>  MISSION_LINK,g' "$missions_html";
+				sed -i 's,MISSION_LINK,<a href="MISSION_URL" target=""><div class="def_buttons" id="map_btn" onclick="">MISSION_URL<span class="tooltip" id="map_tooltip"><\/span><\/div><\/a>  MISSION_LINK,g' "$missions_html";
 				sed -i 's,MISSION_URL,'$mission',g' "$missions_html";
 			fi
 
 		done
+		echo -e "${GREEN}Output data available at http://${IP}/flir2qr/${ZIP_FILENAME} ${WHITE}";
+		
 		sed -i 's=MISSION_LINK==' "$missions_html";
 
-
+		echo -e "${BLUE}Processing $2 complete! ${WHITE}";
 	 	cp -r /opt/flir2qr/html/* ${WWW_PATH};
 	 	gui="${WWW_PATH}/index.html";
 		sed -i 's=WEBMAPLINK='"${HTTP_PATH}"'\/overview\/map\/=' "$gui";
 		sed -i 's=FEETLINK='"${HTTP_PATH}"'\/kmz\/=' "$gui";
 		sed -i 's=FOOTLINK='"${HTTP_PATH}"'\/kml\/merged_foot.kml=' "$gui";
 		sed -i 's=TILELINK='"${HTTP_PATH}"'\/pdf\/=' "$gui";
-		sed -i 's=PDFLINK='"${HTTP_PATH}"'\/overview\/'"${z7_FILENAME}"'_overview.pdf=' "$gui";
-		sed -i 's=TIFLINK='"${HTTP_PATH}"'\/overview\/'"${z7_FILENAME}"'_overview.tif=' "$gui";
-		sed -i 's=KMZLINK='"${HTTP_PATH}"'\/overview\/'"${z7_FILENAME}"'_overview.kmz=' "$gui";
-		sed -i 's=QRKML='"${HTTP_PATH}"'\/overview\/'"${z7_FILENAME}"'_qr.kmz=' "$gui";
+		echo -e "${BLUE}Processing $2 complete! ${WHITE}";
+		sed -i 's=PDFLINK='"${HTTP_PATH}"'\/overview\/'"${ZIP_FILENAME}"'_overview.pdf=' "$gui";
+		sed -i 's=TIFLINK='"${HTTP_PATH}"'\/overview\/'"${ZIP_FILENAME}"'_overview.tif=' "$gui";
+		sed -i 's=KMZLINK='"${HTTP_PATH}"'\/overview\/'"${ZIP_FILENAME}"'_overview.kmz=' "$gui";
+		sed -i 's=QRKML='"${HTTP_PATH}"'\/overview\/'"${ZIP_FILENAME}"'_qr.kmz=' "$gui";
 			  	
 		echo "GUI updated";
+		endTime="$SECONDS";
 		runTime=$(echo $endTime/60-$startTime/60|bc)
 		echo "Script completed in $runTime minutes";
 

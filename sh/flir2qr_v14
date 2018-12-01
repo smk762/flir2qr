@@ -12,6 +12,14 @@ CYAN='\033[0;36m';
 PURPLE='\033[1;35m';
 RED='\033[1;0;31m';
 footprints=();
+
+#waiting for running process to finish
+while [[ $(pgrep -c flir2qr) -gt 1 ]]; do
+	echo "waiting for other mission processing to end";
+	sleep 15s;
+done
+
+
 echo -e "Checking for 7z archive";
 case "$2" in
 *.7z)

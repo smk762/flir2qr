@@ -11,7 +11,6 @@ body {
 	background-repeat: repeat;
 	background-color:  #000000; 
 	z-index: 0;
-	overflow: hidden;
 	display: block;  /* No floating content on sides 
 	font-family: Verdana, Geneva, sans-serif; */
     font-family: 'Raleway', sans-serif;

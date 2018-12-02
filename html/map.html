@@ -131,13 +131,7 @@ var style_hover = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['se
             })
         })
   });
-
-        foot_kml.events.register("loadend", foot_kml, function (e) {
-            map.zoomToExtent(foot_kml.getDataExtent());
-        });
-
-        //map.setCenter(map.restrictedExtent.getCenterLonLat(), 8);
-
+    
         //Add a selector control to the kmllayer with popup functions
         var controls = {
           selector: new OpenLayers.Control.SelectFeature(foot_kml, { onSelect: createPopup, onUnselect: destroyPopup, clickout: true}),
@@ -164,8 +158,6 @@ var style_hover = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['se
               function() { controls['selector'].unselectAll(); }
           );
           feature.popup.closeOnMove = true;
-          //feature.popup.setBackgroundColor("#FFBBBB");
-          //feature.popup.setOpacity(0.1);
           map.addPopup(feature.popup);
         }
 

@@ -17,7 +17,6 @@ timestamp=$(date +%F_%T);
 #IP="$(echo -e $(hostname -I) | tr -d '[:space:]')";
 IP="static.dbca.wa.gov.au"
 ZIP_FILENAME="${2%.*}";
-HTTP_PATH="https://${IP}/flir2qr/${ZIP_FILENAME}";
 PIXELRANGE="0 8000";
 startTime=$SECONDS;
 logfile="/var/www/html/flir2qr/logs/${ZIP_FILENAME}.log";
@@ -43,35 +42,52 @@ case "$2" in
 	  else echo -e "${RED}$timestamp - $2 does not exist, exiting.${WHITE}"$'\r'; echo "file does noe exist!" >> $logfile; exit 1; 
 	fi
 	cp /opt/flir2qr/html/css /var/www/html/flir2qr -r;
-
+	UNZIP_PATH='/var/www/html/flir2qr/zip'
+	# unzip incoming data
+	echo -e "Extracting zipfile into ${UNZIP_PATH}/$2";
+	cp $1/$2 ${UNZIP_PATH}/$2;
+	7z x $1/$2 -o${UNZIP_PATH}/${ZIP_FILENAME} -aoa;
+	UNZIP_ROOT=$(ls ${UNZIP_PATH}/${ZIP_FILENAME})
+	if [[ $UNZIP_ROOT != $ZIP_FILENAME ]]; then
+		echo "good zip"
+		echo $UNZIP_PATH
+		echo $UNZIP_ROOT
+		echo $ZIP_FILENAME
+	else
+		echo "Bad zip"
+		echo $UNZIP_PATH
+		echo $UNZIP_ROOT
+		echo $ZIP_FILENAME
+	fi
+	TEMP_PATH=$FLIR2QR_PATH/temp/${UNZIP_ROOT};	
+	HTTP_PATH="https://${IP}/flir2qr/${UNZIP_ROOT}";
+	#HTTP_PATH="http://${IP}/flir2qr/${UNZIP_ROOT}";
+	rm -Rf ${TEMP_PATH};
+	mkdir -p ${TEMP_PATH};
+	mkdir -p ${TEMP_PATH}/hotspot;
+	mkdir -p ${TEMP_PATH}/ir;
+	WWW_PATH="/var/www/html/flir2qr/${UNZIP_ROOT}";
+	rm -Rf ${WWW_PATH};
+	mkdir -p ${WWW_PATH};
+	echo -e "${GREEN}Copying Hotspots${YELLOW}";
+	cp ${UNZIP_PATH}/${ZIP_FILENAME}/${UNZIP_ROOT}/HotSpots/*  ${TEMP_PATH}/hotspot;
+	echo -e "${GREEN}Copying IR${YELLOW}";
+	cp ${UNZIP_PATH}/${ZIP_FILENAME}/${UNZIP_ROOT}/PNGs/*  ${TEMP_PATH}/ir;
+	num_tiles=$(ls -l ${TEMP_PATH}/hotspot/*.png | wc -l);
 	# define processing and output subfolders
 	declare -a WWW_DIRS=('pdf' 'tif' 'kmz' 'log' 'overview' 'zip' 'kml' 'qr' 'footprint' 'shp');
 	declare -a TEMP_DIRS=('pdf' 'tif' 'kmz' 'log' 'overview' 'zip' 'footprint' 'ir' 'raw' 'mga_50' 'wgs84' 'hotspot' 'basemap' 'shp' 'overlay' 'vrt' 'label' 'qr' 'kml');
 
 	# Create www folders for display
 	echo -e "${PURPLE}Creating website folders in ${WWW_PATH}";
-	WWW_PATH="/var/www/html/flir2qr/${ZIP_FILENAME}";
-	rm -Rf ${WWW_PATH};
-	mkdir -p ${WWW_PATH};
 	for dir in "${WWW_DIRS[@]}"; do  mkdir -p ${WWW_PATH}/$dir; done
+	cp "${UNZIP_PATH}/${ZIP_FILENAME}/${UNZIP_ROOT}/KML Boundaries/mission1_ploy.kml" "$WWW_PATH/kml/hotspots.kml"
+
 
 	# Create temp folders for processing
 	echo -e "${PURPLE}Creating temporary folders in ${TEMP_PATH}";
-	TEMP_PATH=$FLIR2QR_PATH/temp/${ZIP_FILENAME};	
-	rm -Rf ${TEMP_PATH};
-	mkdir -p ${TEMP_PATH};
 	for dir in "${TEMP_DIRS[@]}"; do  mkdir -p ${TEMP_PATH}/$dir; done
-
-	# unzip incoming data
-	echo -e "Extracting zipfile into processing folders";
-	cp $1/$2 /var/www/html/flir2qr/zip/$2;
-	7z x $1/$2 -o${TEMP_PATH}/zip;
-	echo -e "${GREEN}Copying Hotspots${YELLOW}";
-	mv ${TEMP_PATH}/zip/${ZIP_FILENAME}/HotSpots/*  ${TEMP_PATH}/hotspot;
-	echo -e "${GREEN}Copying IR${YELLOW}";
-	mv ${TEMP_PATH}/zip/${ZIP_FILENAME}/PNGs/*  ${TEMP_PATH}/ir;
-	num_tiles=$(ls -l ${TEMP_PATH}/hotspot/*.png | wc -l);
-	mv "${TEMP_PATH}/zip/${ZIP_FILENAME}/KML Boundaries/mission1_ploy.kml" "$WWW_PATH/kml/hotspots.kml"
+	ZIP_FILENAME=${UNZIP_ROOT}
 
 	i=0;
 	j=0;
@@ -575,7 +591,7 @@ case "$2" in
 		  	qrencode -o $QR_img $pdf_link;
 		
 		qrencode -o ${WWW_PATH}/qr/mission.png https://$IP/flir2qr/${ZIP_FILENAME}/;
-		/home/$USER/emailnotifiy.sh "Thermal flight ${ZIP_FILENAME} complete" "${WWW_PATH}/overview/${ZIP_FILENAME}_overview.pdf" "${HTTP_PATH}";
+		/home/$USER/emailnotifiy.sh "Thermal flight ${ZIP_FILENAME} complete" "${WWW_PATH}/overview/overview.pdf" "${HTTP_PATH}";
 	 
 	 	#Setup GUI
 		echo -e "${PURPLE}creating GUIs ${YELLOW}";
@@ -613,8 +629,8 @@ case "$2" in
 		sed -i 's=TIFLINK='"${HTTP_PATH}"'\/overview\/'"${ZIP_FILENAME}"'_overview.tif=' "$gui";
 		sed -i 's=KMZLINK='"${HTTP_PATH}"'\/overview\/'"${ZIP_FILENAME}"'_overview.kmz=' "$gui";
 		sed -i 's=QRKML='"${HTTP_PATH}"'\/overview\/'"${ZIP_FILENAME}"'_qr.kmz=' "$gui";
-		sed -i 's=MISSION_NAME='"${ZIP_FILENAME}"'=g' "$gui";
-	  	
+		sed -i 's=MISSION_NAME='${ZIP_FILENAME}'=g' "$gui";
+			  	
 		echo "GUI updated";
 	else
 		echo "No hotspots detected!";
@@ -628,7 +644,7 @@ case "$2" in
 		rm -Rf ${TEMP_PATH}/*;
 
 		echo -e "${BLUE}Processing $2 complete! ${WHITE}";
-		echo -e "${GREEN}Output data available at http://${IP}/flir2qr/${ZIP_FILENAME} ${WHITE}";
+		echo -e "${GREEN}Output data available at http://${IP}/flir2qr/${UNZIP_ROOT} ${WHITE}";
 	 ;;
 	*)
 	  echo -e "${RED}Unexpected file type '$2'. 7z Archive Only! ${WHITE}";

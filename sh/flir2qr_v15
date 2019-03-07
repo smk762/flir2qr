@@ -23,9 +23,17 @@ logfile="/var/www/html/flir2qr/logs/${ZIP_FILENAME}.log";
 echo -e "Started processing $2 at $timestamp"           
 echo "Starting process on $2 at $timestamp" > $logfile;    
 touch $logfile;
+cp /opt/flir2qr/js/ol4.js /var/www/html/flir2qr/js/ol4.js
+cp /opt/flir2qr/js/ol.js /var/www/html/flir2qr/js/ol.js
+
+cp /opt/flir2qr/js/measure_dyn.js /var/www/html/flir2qr/js/measure_dyn.js
+cp /opt/flir2qr/js/dyn_measure.js /var/www/html/flir2qr/js/dyn_measure.js
+
 # Define legend and logo images
 LOGO="$FLIR2QR_PATH/img/logo.gif";
 LEGEND="$FLIR2QR_PATH/img/legend2.jpg";
+# Define current COG TILE for Base map
+cog_master="${FLIR2QR_PATH}/base/2030_ops.tif"
 
 #waiting for running process to finish - not an ideal solution... may fail if too many sent too quick
 while [[ $(pgrep -c flir2qr) -gt 1 ]]; do
@@ -67,9 +75,24 @@ case "$2" in
 	mkdir -p ${TEMP_PATH}/hotspot;
 	mkdir -p ${TEMP_PATH}/ir;
 	WWW_PATH="/var/www/html/flir2qr/${UNZIP_ROOT}";
-	rm -Rf ${WWW_PATH};
+	rm -rf /var/www/html/flir2qr/${UNZIP_ROOT};
 	mkdir -p ${WWW_PATH};
-	echo -e "${GREEN}Copying Hotspots${YELLOW}";
+        mkdir -p ${WWW_PATH}/log;
+        mkdir -p ${WWW_PATH}/js;
+        cp /opt/flir2qr/html/css /var/www/html/flir2qr -r;
+
+	touch $logfile;
+	cp /opt/flir2qr/js/ol4.js /var/www/html/flir2qr/js/ol.js
+	cp /opt/flir2qr/js/measure_dyn.js /var/www/html/flir2qr/js/measure_dyn.js
+	cp /opt/flir2qr/js/dyn_measure.js /var/www/html/flir2qr/js/dyn_measure.js
+        cp /opt/flir2qr/html/css/moon.css /var/www/html/flir2qr/css/moon.css
+        cp /opt/flir2qr/html/css/controls.css /var/www/html/flir2qr/css/controls.css
+        cp /opt/flir2qr/html/css/style.css /var/www/html/flir2qr/css/style.css
+
+
+
+
+	echo -e "${GREEN}Copying Hotspots from ${UNZIP_PATH}/${ZIP_FILENAME}/${UNZIP_ROOT}/HotSpots/ to  ${TEMP_PATH}/hotspot${YELLOW}";
 	cp ${UNZIP_PATH}/${ZIP_FILENAME}/${UNZIP_ROOT}/HotSpots/*  ${TEMP_PATH}/hotspot;
 	echo -e "${GREEN}Copying IR${YELLOW}";
 	cp ${UNZIP_PATH}/${ZIP_FILENAME}/${UNZIP_ROOT}/PNGs/*  ${TEMP_PATH}/ir;
@@ -390,7 +413,6 @@ case "$2" in
 	  	qrencode -o ${TEMP_PATH}/kml/${ZIP_FILENAME}_overview_pdf.png $pdf_link;
 		PDF_URL='<![CDATA[ <a href='${pdf_link}'> ]]> '${ZIP_FILENAME}.PDF' <![CDATA[ </a> ]]>'
 		overview_tif_z50="${WWW_PATH}/overview/overview_z50.tif"
-		cog_master="${FLIR2QR_PATH}/base/merge3.tif"
 		cog_base="${WWW_PATH}/overview/cog_base.tif"
 		gdalwarp -dstalpha -te $ulx $lry $lrx $uly -co COMPRESS=DEFLATE -overwrite -ot Byte $cog_master $cog_base -ts $IR_MAPSIZE;
 
@@ -591,7 +613,7 @@ case "$2" in
 		  	qrencode -o $QR_img $pdf_link;
 		
 		qrencode -o ${WWW_PATH}/qr/mission.png https://$IP/flir2qr/${ZIP_FILENAME}/;
-		/home/$USER/emailnotifiy.sh "Thermal flight ${ZIP_FILENAME} complete" "${WWW_PATH}/overview/overview.pdf" "${HTTP_PATH}";
+		/home/$USER/emailnotifiy.sh "Thermal flight ${ZIP_FILENAME} complete" "${WWW_PATH}/overview/${ZIP_FILENAME}_overview.pdf" "${HTTP_PATH}";
 	 
 	 	#Setup GUI
 		echo -e "${PURPLE}creating GUIs ${YELLOW}";

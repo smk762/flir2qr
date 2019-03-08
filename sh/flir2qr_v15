@@ -67,6 +67,10 @@ case "$2" in
 		echo $UNZIP_ROOT
 		echo $ZIP_FILENAME
 	fi
+	if [[ $UNZIP_ROOT = '' ]]; then
+		echo "BAD ZIP ROOT, EXITING"
+		exit 2;
+	fi
 	TEMP_PATH=$FLIR2QR_PATH/temp/${UNZIP_ROOT};	
 	HTTP_PATH="https://${IP}/flir2qr/${UNZIP_ROOT}";
 	#HTTP_PATH="http://${IP}/flir2qr/${UNZIP_ROOT}";
